@@ -262,6 +262,7 @@
                 <input type="file" id="loadFile" class="file-input" accept=".json">
                 <button id="clearButton" class="clear-btn">Clear Board</button>
                 <button id="resetViewButton">Reset View</button>
+                <button id="deleteModeButton" class="copy-btn">Delete Mode: OFF</button>
             </div>
         </div>
         
@@ -287,7 +288,7 @@
         
         <div class="legend">
             <p class="legend-title">Instructions:</p>
-            <p>Click on the board to place a character. Drag characters to reposition them. Use rotation controls to view the board from different angles.</p>
+            <p>Click on the board to place a character. Drag characters to reposition them. Use rotation controls to view the board from different angles. Toggle Delete Mode to remove pieces by clicking on them.</p>
             <div class="legend-items">
                 <div class="legend-item">
                     <div class="legend-color party-color"></div>
@@ -334,6 +335,7 @@
         let mouse = new THREE.Vector2();
         let shootingStars = [];
         let errorMessageTimeout;
+        let deleteMode = false;
         
         const boardContainer = document.getElementById('boardContainer');
         const positionsOutput = document.getElementById('positionsOutput');
@@ -368,6 +370,12 @@
         
         document.getElementById('resetViewButton').addEventListener('click', function() {
             resetCameraPosition();
+        });
+        
+        document.getElementById('deleteModeButton').addEventListener('click', function() {
+            deleteMode = !deleteMode;
+            this.textContent = deleteMode ? "Delete Mode: ON" : "Delete Mode: OFF";
+            this.style.backgroundColor = deleteMode ? "#f44336" : "#8B0000";
         });
         
         document.getElementById('saveButton').addEventListener('click', function() {
@@ -962,23 +970,42 @@
                 }
                 
                 if (object.userData.isPiece) {
-                    // Start dragging
-                    isDragging = true;
-                    selectedPiece = object;
-                    
-                    // Calculate drag offset
-                    const planeIntersect = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-                    const intersection = new THREE.Vector3();
-                    raycaster.ray.intersectPlane(planeIntersect, intersection);
-                    dragOffset.copy(selectedPiece.position).sub(intersection);
+                    if (deleteMode) {
+                        // Delete the piece when in delete mode
+                        const pieceIndex = pieces.findIndex(p => p.id === object.userData.id);
+                        if (pieceIndex !== -1) {
+                            // Remove from occupied positions
+                            const posKey = getPositionKey(pieces[pieceIndex].x, pieces[pieceIndex].z);
+                            delete occupiedPositions[posKey];
+                            
+                            // Remove from pieces array
+                            pieces.splice(pieceIndex, 1);
+                            
+                            // Update the board
+                            updatePieces();
+                            
+                            showErrorMessage("Piece deleted!");
+                        }
+                    } else {
+                        // Start dragging when not in delete mode
+                        isDragging = true;
+                        selectedPiece = object;
+                        
+                        // Calculate drag offset
+                        const planeIntersect = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+                        const intersection = new THREE.Vector3();
+                        raycaster.ray.intersectPlane(planeIntersect, intersection);
+                        dragOffset.copy(selectedPiece.position).sub(intersection);
+                    }
                 }
                 
                 return;
             }
             
             // If not dragging a piece, check for board click to place new piece
+            // Skip adding new pieces if in delete mode
             const boardIntersects = raycaster.intersectObject(board);
-            if (boardIntersects.length > 0 && !isDragging) {
+            if (boardIntersects.length > 0 && !isDragging && !deleteMode) {
                 const point = boardIntersects[0].point;
                 // Convert to grid coordinates
                 const x = Math.floor(point.x);
