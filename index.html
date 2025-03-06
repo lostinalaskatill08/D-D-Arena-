@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Space Battle Arena</title>
+    <!-- Import Cinzel font from Google Fonts to match the Dice Roller theme -->
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+
         body {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #000;
-            color: #fff;
+            font-family: 'Cinzel', serif; /* Changed to Cinzel to match Dice Roller */
+            background-color: #1a1a1a; /* Dark background like Dice Roller */
+            color: #fafafa;
         }
         .container {
             width: 100%;
@@ -22,11 +25,12 @@
             display: flex;
             justify-content: space-between;
             padding: 16px;
-            background-color: rgba(50, 50, 80, 0.7);
+            background-color: #2a2a2a; /* Darker background to match Dice Roller */
             margin-bottom: 16px;
             border-radius: 8px;
             flex-wrap: wrap;
             gap: 10px;
+            border: 2px solid #8B0000; /* Red border like Dice Roller */
         }
         .control-group {
             display: flex;
@@ -39,46 +43,48 @@
         }
         select, button {
             padding: 8px;
-            border: 1px solid #444;
+            border: 1px solid #440000; /* Darker red border like Dice Roller */
             border-radius: 4px;
-            background-color: rgba(30, 30, 50, 0.8);
-            color: #fff;
-        }
-        button {
-            background-color: #3f51b5;
-            color: white;
-            border: none;
+            background-color: #8B0000; /* Red background like Dice Roller */
+            color: #fafafa;
+            font-family: 'Cinzel', serif;
             cursor: pointer;
         }
+        select {
+            background-color: #2a2a2a;
+        }
         button:hover {
-            background-color: #303f9f;
+            background-color: #6d0101; /* Darker red on hover like Dice Roller */
         }
         button.clear-btn {
-            background-color: #f44336;
+            background-color: #8B0000;
         }
         button.clear-btn:hover {
-            background-color: #d32f2f;
+            background-color: #6d0101;
         }
         button.copy-btn {
-            background-color: #4caf50;
+            background-color: #8B0000;
         }
         button.copy-btn:hover {
-            background-color: #388e3c;
+            background-color: #6d0101;
         }
         .board-container {
             width: 100%;
             height: 600px;
-            border: 1px solid #666;
+            border: 2px solid #8B0000; /* Red border like Dice Roller */
             border-radius: 8px;
             overflow: hidden;
             position: relative;
+            background-color: #000;
+            margin-bottom: 10px;
         }
         .legend {
             margin-top: 16px;
             text-align: center;
-            background-color: rgba(30, 30, 50, 0.7);
+            background-color: #2a2a2a; /* Darker background to match Dice Roller */
             padding: 12px;
             border-radius: 8px;
+            border: 2px solid #8B0000; /* Red border like Dice Roller */
         }
         .legend-title {
             font-weight: 500;
@@ -132,20 +138,24 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: #8B0000; /* Red background like Dice Roller */
             color: #fff;
+            border: 1px solid #440000;
+        }
+        .rotation-btn:hover {
+            background-color: #6d0101;
         }
         .positions-output {
             margin-top: 16px;
             width: 100%;
             height: 120px;
             padding: 8px;
-            border: 1px solid #444;
+            border: 2px solid #8B0000; /* Red border like Dice Roller */
             border-radius: 4px;
             resize: vertical;
             font-family: monospace;
             display: none;
-            background-color: rgba(30, 30, 50, 0.7);
+            background-color: #2a2a2a; /* Darker background to match Dice Roller */
             color: #fff;
         }
         .copy-success {
@@ -160,7 +170,8 @@
         }
         h1 {
             color: #fff;
-            text-shadow: 0 0 10px rgba(100, 100, 255, 0.8);
+            text-shadow: 0 0 10px rgba(139, 0, 0, 0.8); /* Red glow to match the theme */
+            text-align: center;
         }
     </style>
     <!-- Import three.js library -->
@@ -359,11 +370,11 @@
             scene.add(directionalLight);
             
             // Add point light for dramatic effect
-            const pointLight = new THREE.PointLight(0x6666ff, 1, 100);
+            const pointLight = new THREE.PointLight(0x8B0000, 1, 100); // Changed to red to match theme
             pointLight.position.set(boardSize / 2, 10, boardSize / 2);
             scene.add(pointLight);
             
-            // Create space background with stars
+            // Create space background with stars (using Dice Roller's approach)
             createStarfield();
             
             // Create game board
@@ -377,16 +388,20 @@
             renderer.domElement.addEventListener('mousemove', onMouseMove);
             renderer.domElement.addEventListener('mouseup', onMouseUp);
             
-            // Shooting star timer
-            setInterval(createShootingStar, 400); // Create a shooting star every 400ms
+            // Shooting star timer (using Dice Roller's approach)
+            setInterval(() => {
+                if (Math.random() < 0.3) { // Lower chance to match Dice Roller's rate
+                    createShootingStar();
+                }
+            }, 400);
             
             // Start animation loop
             animate();
         }
         
-        // Create starfield background
+        // Create starfield background (using Dice Roller's approach)
         function createStarfield() {
-            // Create the star particles
+            const starCount = 1000;
             const starsGeometry = new THREE.BufferGeometry();
             const starsMaterial = new THREE.PointsMaterial({
                 color: 0xffffff,
@@ -395,7 +410,7 @@
             });
             
             const starsVertices = [];
-            for (let i = 0; i < 5000; i++) {
+            for (let i = 0; i < starCount; i++) {
                 const x = (Math.random() - 0.5) * 2000;
                 const y = (Math.random() - 0.5) * 2000;
                 const z = (Math.random() - 0.5) * 2000;
@@ -407,79 +422,51 @@
             scene.add(starField);
         }
         
-        // Create a shooting star
+        // Create a shooting star (updated to match Dice Roller's approach)
         function createShootingStar() {
-            // Create 2-4 shooting stars
+            // Create multiple shooting stars (matching Dice Roller's approach)
             const numStars = Math.floor(Math.random() * 3) + 2;
             
             for (let i = 0; i < numStars; i++) {
-                // Random starting position outside the board
-                const startX = (Math.random() - 0.5) * boardSize * 5;
-                const startY = (Math.random() - 0.5) * boardSize * 5;
-                const startZ = (Math.random() - 0.5) * boardSize * 5;
+                const geometry = new THREE.SphereGeometry(0.15, 8, 8);
+                const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const star = new THREE.Mesh(geometry, material);
                 
-                // Direction vector (normalized)
-                const dirX = (Math.random() - 0.5);
-                const dirY = (Math.random() - 0.5);
-                const dirZ = (Math.random() - 0.5);
-                const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+                star.position.set(
+                    randomBetween(-30, 30),
+                    randomBetween(10, 40),
+                    randomBetween(-200, -300)
+                );
                 
-                // Create the shooting star geometry - a small line
-                const shootingStarGeometry = new THREE.BufferGeometry();
-                const positions = new Float32Array(6); // Two points (xyz, xyz)
+                star.userData.velocity = new THREE.Vector3(
+                    randomBetween(-1, 1),
+                    randomBetween(-0.2, -0.5),
+                    randomBetween(50, 80)
+                );
                 
-                // Starting point
-                positions[0] = startX;
-                positions[1] = startY;
-                positions[2] = startZ;
-                
-                // End point - a short distance away in the direction
-                positions[3] = startX + (dirX / length) * 5;
-                positions[4] = startY + (dirY / length) * 5;
-                positions[5] = startZ + (dirZ / length) * 5;
-                
-                shootingStarGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                
-                // Material - bright white with glow
-                const shootingStarMaterial = new THREE.LineBasicMaterial({
-                    color: 0xffffff,
-                    linewidth: 3
-                });
-                
-                const shootingStar = new THREE.Line(shootingStarGeometry, shootingStarMaterial);
-                scene.add(shootingStar);
-                
-                // Store the shooting star with its direction for animation
-                shootingStars.push({
-                    object: shootingStar,
-                    direction: new THREE.Vector3(dirX / length, dirY / length, dirZ / length),
-                    speed: 2 + Math.random() * 5, // Random speed
-                    life: 100 // Life counter before removal
-                });
+                scene.add(star);
+                shootingStars.push(star);
             }
         }
         
-        // Update shooting stars
-        function updateShootingStars() {
+        // Helper function for random values (used by shooting stars)
+        function randomBetween(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+        
+        // Update shooting stars (updated to match Dice Roller's approach)
+        function updateShootingStars(delta) {
             for (let i = shootingStars.length - 1; i >= 0; i--) {
                 const star = shootingStars[i];
-                const positions = star.object.geometry.attributes.position.array;
+                star.position.addScaledVector(star.userData.velocity, delta);
                 
-                // Move both points of the line
-                for (let j = 0; j < 6; j += 3) {
-                    positions[j] += star.direction.x * star.speed;
-                    positions[j + 1] += star.direction.y * star.speed;
-                    positions[j + 2] += star.direction.z * star.speed;
-                }
-                
-                star.object.geometry.attributes.position.needsUpdate = true;
-                
-                // Decrease life
-                star.life--;
-                
-                // Remove if life is depleted
-                if (star.life <= 0) {
-                    scene.remove(star.object);
+                if (
+                    star.position.z > 50 ||
+                    star.position.y < -10 ||
+                    star.position.x < -100 || 
+                    star.position.x > 100
+                ) {
+                    scene.remove(star);
                     shootingStars.splice(i, 1);
                 }
             }
@@ -497,6 +484,18 @@
             board = new THREE.Mesh(boardGeometry, boardMaterial);
             board.position.set(boardSize / 2 - 0.5, -0.25, boardSize / 2 - 0.5);
             scene.add(board);
+            
+            // Create border (red border to match Dice Roller)
+            const borderSize = boardSize + 2;
+            const borderGeometry = new THREE.BoxGeometry(borderSize, 0.4, borderSize);
+            const borderMaterial = new THREE.MeshPhongMaterial({
+                color: 0x8B0000, // Red color to match Dice Roller
+                shininess: 50
+            });
+            
+            const border = new THREE.Mesh(borderGeometry, borderMaterial);
+            border.position.set(boardSize / 2 - 0.5, -0.4, boardSize / 2 - 0.5);
+            scene.add(border);
             
             // Create grid lines - white lines on black board
             const gridSize = boardSize;
@@ -793,3 +792,91 @@
             selectedPiece.position.x = Math.floor(selectedPiece.position.x) + 0.5;
             selectedPiece.position.z = Math.floor(selectedPiece.position.z) + 0.5;
             selectedPiece.position.y = 0; // Keep on board surface
+        }
+        
+        // Handle mouse up
+        function onMouseUp() {
+            if (isDragging && selectedPiece) {
+                // Update piece data
+                const pieceIndex = pieces.findIndex(p => p.id === selectedPiece.userData.id);
+                if (pieceIndex !== -1) {
+                    const x = Math.floor(selectedPiece.position.x);
+                    const z = Math.floor(selectedPiece.position.z);
+                    
+                    // Check if within board bounds
+                    if (x >= 0 && x < boardSize && z >= 0 && z < boardSize) {
+                        // Check if space is already occupied
+                        const existingPieceIndex = pieces.findIndex(p => p.id !== selectedPiece.userData.id && p.x === x && p.z === z);
+                        
+                        if (existingPieceIndex !== -1) {
+                            // Space occupied, move back to original position
+                            selectedPiece.position.set(pieces[pieceIndex].x + 0.5, 0, pieces[pieceIndex].z + 0.5);
+                        } else {
+                            // Update piece data
+                            pieces[pieceIndex].x = x;
+                            pieces[pieceIndex].z = z;
+                        }
+                    } else {
+                        // Out of bounds, move back to original position
+                        selectedPiece.position.set(pieces[pieceIndex].x + 0.5, 0, pieces[pieceIndex].z + 0.5);
+                    }
+                }
+            }
+            
+            // Reset dragging state
+            isDragging = false;
+            selectedPiece = null;
+        }
+        
+        // Update piece meshes based on piece data
+        function updatePieces() {
+            // Remove all existing pieces
+            draggableMeshes.forEach(mesh => {
+                scene.remove(mesh);
+            });
+            draggableMeshes = [];
+            
+            // Create new pieces from data
+            pieces.forEach(pieceData => {
+                const figure = createHumanoidFigure(pieceData.type);
+                figure.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
+                
+                // Add piece metadata
+                figure.userData = {
+                    isPiece: true,
+                    id: pieceData.id,
+                    type: pieceData.type
+                };
+                
+                // Add to scene and tracking arrays
+                scene.add(figure);
+                draggableMeshes.push(figure);
+            });
+        }
+        
+        // Reset the scene (called when board size changes)
+        function resetScene() {
+            // Remove everything
+            scene.clear();
+            pieces = [];
+            draggableMeshes = [];
+            
+            // Recreate everything
+            init();
+        }
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Update shooting stars
+            updateShootingStars(0.016); // Approximately 60fps
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
