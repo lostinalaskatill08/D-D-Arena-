@@ -11,8 +11,8 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Cinzel', serif; /* Changed to Cinzel to match Dice Roller */
-            background-color: #1a1a1a; /* Dark background like Dice Roller */
+            font-family: 'Cinzel', serif;
+            background-color: #1a1a1a;
             color: #fafafa;
         }
         .container {
@@ -25,12 +25,12 @@
             display: flex;
             justify-content: space-between;
             padding: 16px;
-            background-color: #2a2a2a; /* Darker background to match Dice Roller */
+            background-color: #2a2a2a;
             margin-bottom: 16px;
             border-radius: 8px;
             flex-wrap: wrap;
             gap: 10px;
-            border: 2px solid #8B0000; /* Red border like Dice Roller */
+            border: 2px solid #8B0000;
         }
         .control-group {
             display: flex;
@@ -43,9 +43,9 @@
         }
         select, button {
             padding: 8px;
-            border: 1px solid #440000; /* Darker red border like Dice Roller */
+            border: 1px solid #440000;
             border-radius: 4px;
-            background-color: #8B0000; /* Red background like Dice Roller */
+            background-color: #8B0000;
             color: #fafafa;
             font-family: 'Cinzel', serif;
             cursor: pointer;
@@ -54,7 +54,7 @@
             background-color: #2a2a2a;
         }
         button:hover {
-            background-color: #6d0101; /* Darker red on hover like Dice Roller */
+            background-color: #6d0101;
         }
         button.clear-btn {
             background-color: #8B0000;
@@ -71,7 +71,7 @@
         .board-container {
             width: 100%;
             height: 600px;
-            border: 2px solid #8B0000; /* Red border like Dice Roller */
+            border: 2px solid #8B0000;
             border-radius: 8px;
             overflow: hidden;
             position: relative;
@@ -81,10 +81,10 @@
         .legend {
             margin-top: 16px;
             text-align: center;
-            background-color: #2a2a2a; /* Darker background to match Dice Roller */
+            background-color: #2a2a2a;
             padding: 12px;
             border-radius: 8px;
-            border: 2px solid #8B0000; /* Red border like Dice Roller */
+            border: 2px solid #8B0000;
         }
         .legend-title {
             font-weight: 500;
@@ -138,7 +138,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #8B0000; /* Red background like Dice Roller */
+            background-color: #8B0000;
             color: #fff;
             border: 1px solid #440000;
         }
@@ -150,12 +150,12 @@
             width: 100%;
             height: 120px;
             padding: 8px;
-            border: 2px solid #8B0000; /* Red border like Dice Roller */
+            border: 2px solid #8B0000;
             border-radius: 4px;
             resize: vertical;
             font-family: monospace;
             display: none;
-            background-color: #2a2a2a; /* Darker background to match Dice Roller */
+            background-color: #2a2a2a;
             color: #fff;
         }
         .copy-success {
@@ -170,8 +170,35 @@
         }
         h1 {
             color: #fff;
-            text-shadow: 0 0 10px rgba(139, 0, 0, 0.8); /* Red glow to match the theme */
+            text-shadow: 0 0 10px rgba(139, 0, 0, 0.8);
             text-align: center;
+        }
+        /* Add error message styling */
+        .error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(139, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+        .error-message.visible {
+            opacity: 1;
+        }
+        /* Grid coordinates style */
+        .grid-coordinate {
+            position: absolute;
+            color: #8B0000;
+            font-size: 0.6rem;
+            pointer-events: none;
+            top: 3px;
+            left: 3px;
         }
     </style>
     <!-- Import three.js library -->
@@ -222,6 +249,7 @@
                     <button class="rotation-btn" id="rotateRightHorizontalBtn">→</button>
                 </div>
             </div>
+            <div id="errorMessage" class="error-message">Position already occupied!</div>
         </div>
         
         <div class="legend">
@@ -271,12 +299,20 @@
         let dragOffset = new THREE.Vector3();
         let raycaster = new THREE.Raycaster();
         let mouse = new THREE.Vector2();
-        let stars = [];
         let shootingStars = [];
+        let errorMessageTimeout;
         
         const boardContainer = document.getElementById('boardContainer');
         const positionsOutput = document.getElementById('positionsOutput');
         const copySuccess = document.getElementById('copySuccess');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        // Occupied positions grid - for collision detection
+        let occupiedPositions = {};
+        
+        // Camera constraints
+        const CAMERA_MIN_POLAR_ANGLE = 0.1; // Minimum angle (radians) from the horizontal
+        const CAMERA_MAX_POLAR_ANGLE = Math.PI / 2.2; // Maximum angle (radians) - slightly less than 90 degrees
         
         // Setup event listeners
         document.getElementById('pieceTypeSelect').addEventListener('change', function(e) {
@@ -290,6 +326,7 @@
         
         document.getElementById('clearButton').addEventListener('click', function() {
             pieces = [];
+            occupiedPositions = {};
             updatePieces();
         });
         
@@ -341,6 +378,22 @@
             rotateCamera('rightH');
         });
         
+        // Helper function to get position key for the occupiedPositions map
+        function getPositionKey(x, z) {
+            return `${x},${z}`;
+        }
+        
+        // Helper to show error message
+        function showErrorMessage(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('visible');
+            
+            clearTimeout(errorMessageTimeout);
+            errorMessageTimeout = setTimeout(() => {
+                errorMessage.classList.remove('visible');
+            }, 2000);
+        }
+        
         // Initialize the scene
         function init() {
             // Create scene
@@ -374,8 +427,8 @@
             pointLight.position.set(boardSize / 2, 10, boardSize / 2);
             scene.add(pointLight);
             
-            // Create space background with stars (using Dice Roller's approach)
-            createStarfield();
+            // Create minimal starfield (just a few distant stars)
+            createMinimalStarfield();
             
             // Create game board
             createBoard();
@@ -388,43 +441,53 @@
             renderer.domElement.addEventListener('mousemove', onMouseMove);
             renderer.domElement.addEventListener('mouseup', onMouseUp);
             
-            // Shooting star timer (using Dice Roller's approach)
+            // Shooting star timer with higher frequency - matching Dice Roller
             setInterval(() => {
-                if (Math.random() < 0.3) { // Lower chance to match Dice Roller's rate
+                if (Math.random() < 0.5) { // Higher chance for more shooting stars
                     createShootingStar();
                 }
-            }, 400);
+            }, 200); // More frequent shooting stars
             
             // Start animation loop
             animate();
+            
+            // Initialize occupied positions map
+            occupiedPositions = {};
         }
         
-        // Create starfield background (using Dice Roller's approach)
-        function createStarfield() {
-            const starCount = 1000;
-            const starsGeometry = new THREE.BufferGeometry();
-            const starsMaterial = new THREE.PointsMaterial({
+        // Create a minimal starfield with stars only in the far distance
+        function createMinimalStarfield() {
+            // Only create distant stars to avoid blocking the view
+            const distantStarCount = 400;
+            const distantGeometry = new THREE.BufferGeometry();
+            const distantMaterial = new THREE.PointsMaterial({
                 color: 0xffffff,
                 size: 1,
                 sizeAttenuation: false
             });
             
-            const starsVertices = [];
-            for (let i = 0; i < starCount; i++) {
+            const distantVertices = [];
+            for (let i = 0; i < distantStarCount; i++) {
+                // Place stars well away from the board area
                 const x = (Math.random() - 0.5) * 2000;
                 const y = (Math.random() - 0.5) * 2000;
                 const z = (Math.random() - 0.5) * 2000;
-                starsVertices.push(x, y, z);
+                
+                // Don't add stars that are too close to the board
+                const distanceFromOrigin = Math.sqrt(x*x + y*y + z*z);
+                if (distanceFromOrigin > 300) {
+                    distantVertices.push(x, y, z);
+                }
             }
             
-            starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
-            const starField = new THREE.Points(starsGeometry, starsMaterial);
-            scene.add(starField);
+            distantGeometry.setAttribute('position', new THREE.Float32BufferAttribute(distantVertices, 3));
+            const distantStarField = new THREE.Points(distantGeometry, distantMaterial);
+            scene.add(distantStarField);
         }
         
-        // Create a shooting star (updated to match Dice Roller's approach)
+        // Create a shooting star - matching Dice Roller's approach
         function createShootingStar() {
-            // Create multiple shooting stars (matching Dice Roller's approach)
+            // Create multiple shooting stars
             const numStars = Math.floor(Math.random() * 3) + 2;
             
             for (let i = 0; i < numStars; i++) {
@@ -432,6 +495,7 @@
                 const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
                 const star = new THREE.Mesh(geometry, material);
                 
+                // Match Dice Roller shooting star positioning
                 star.position.set(
                     randomBetween(-30, 30),
                     randomBetween(10, 40),
@@ -449,12 +513,12 @@
             }
         }
         
-        // Helper function for random values (used by shooting stars)
+        // Helper function for random values
         function randomBetween(min, max) {
             return Math.random() * (max - min) + min;
         }
         
-        // Update shooting stars (updated to match Dice Roller's approach)
+        // Update shooting stars - matching Dice Roller's approach
         function updateShootingStars(delta) {
             for (let i = shootingStars.length - 1; i >= 0; i--) {
                 const star = shootingStars[i];
@@ -474,7 +538,7 @@
         
         // Create the game board
         function createBoard() {
-            // Create game board
+            // Create the board plane
             const boardGeometry = new THREE.BoxGeometry(boardSize, 0.5, boardSize);
             const boardMaterial = new THREE.MeshPhongMaterial({ 
                 color: 0x000000,  // Black base color
@@ -497,42 +561,81 @@
             border.position.set(boardSize / 2 - 0.5, -0.4, boardSize / 2 - 0.5);
             scene.add(border);
             
-            // Create grid lines - white lines on black board
-            const gridSize = boardSize;
-            const gridDivisions = boardSize;
-            const gridMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+            // Create grid lines directly on the board surface
+            createGridLines();
+            
+            // Add grid coordinates
+            addGridCoordinates();
+        }
+        
+        // Create grid lines that stay within the board boundaries
+        function createGridLines() {
+            const gridGroup = new THREE.Group();
             
             // Create horizontal grid lines
-            for (let i = 0; i <= gridDivisions; i++) {
-                const x = (i / gridDivisions) * gridSize;
-                
-                const geometryH = new THREE.BufferGeometry();
+            for (let i = 0; i <= boardSize; i++) {
+                const lineGeometry = new THREE.BufferGeometry();
                 const vertices = new Float32Array([
-                    x, 0.01, 0,
-                    x, 0.01, gridSize
+                    0, 0.01, i,
+                    boardSize, 0.01, i
                 ]);
-                geometryH.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+                lineGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
                 
-                const line = new THREE.Line(geometryH, gridMaterial);
-                line.position.set(0, 0, 0);
-                board.add(line);
+                const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+                const line = new THREE.Line(lineGeometry, lineMaterial);
+                gridGroup.add(line);
             }
             
             // Create vertical grid lines
-            for (let i = 0; i <= gridDivisions; i++) {
-                const z = (i / gridDivisions) * gridSize;
-                
-                const geometryV = new THREE.BufferGeometry();
+            for (let i = 0; i <= boardSize; i++) {
+                const lineGeometry = new THREE.BufferGeometry();
                 const vertices = new Float32Array([
-                    0, 0.01, z,
-                    gridSize, 0.01, z
+                    i, 0.01, 0,
+                    i, 0.01, boardSize
                 ]);
-                geometryV.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+                lineGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
                 
-                const line = new THREE.Line(geometryV, gridMaterial);
-                line.position.set(0, 0, 0);
-                board.add(line);
+                const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+                const line = new THREE.Line(lineGeometry, lineMaterial);
+                gridGroup.add(line);
             }
+            
+            // Position the grid group directly on top of the board
+            gridGroup.position.copy(board.position);
+            gridGroup.position.y = 0.01; // Raise slightly above board surface
+            scene.add(gridGroup);
+        }
+        
+        // Add grid coordinates (A1, B2, etc.) like in the D&D Combat Tracker
+        function addGridCoordinates() {
+            const coordGroup = new THREE.Group();
+            const fontLoader = new THREE.FontLoader();
+            
+            // Add coordinate labels using simple Three.js objects
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    // Create coordinate marker as small colored cube
+                    const coordLabel = document.createElement('div');
+                    coordLabel.className = 'grid-coordinate';
+                    coordLabel.textContent = `${String.fromCharCode(65 + col)}${row + 1}`;
+                    coordLabel.style.position = 'absolute';
+                    coordLabel.style.left = `${(col + 0.5) / boardSize * 100}%`;
+                    coordLabel.style.top = `${(row + 0.5) / boardSize * 100}%`;
+                    
+                    // Create coordinate text as sprites
+                    const coordGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+                    const coordMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, visible: false });
+                    const coordMarker = new THREE.Mesh(coordGeometry, coordMaterial);
+                    
+                    // Position at grid cell corners
+                    coordMarker.position.set(col + 0.1, 0.05, row + 0.1);
+                    coordGroup.add(coordMarker);
+                }
+            }
+            
+            // Position the coordinate group correctly
+            coordGroup.position.copy(board.position);
+            scene.add(coordGroup);
         }
         
         // Create humanoid figure
@@ -648,12 +751,28 @@
             camera.lookAt(boardSize / 2 - 0.5, 0, boardSize / 2 - 0.5);
         }
         
-        // Rotate camera based on direction
+        // Calculate camera's polar angle (angle from horizontal)
+        function getCameraPolarAngle() {
+            const boardCenter = new THREE.Vector3(boardSize / 2 - 0.5, 0, boardSize / 2 - 0.5);
+            const cameraDirection = new THREE.Vector3().subVectors(camera.position, boardCenter).normalize();
+            const horizontalDirection = new THREE.Vector3(cameraDirection.x, 0, cameraDirection.z).normalize();
+            return Math.acos(horizontalDirection.dot(cameraDirection));
+        }
+        
+        // Rotate camera with constraints
         function rotateCamera(direction) {
             const rotationAngle = Math.PI / 16; // 11.25 degrees
             const rotationMatrix = new THREE.Matrix4();
             const cameraDirection = new THREE.Vector3();
             camera.getWorldDirection(cameraDirection);
+            const boardCenter = new THREE.Vector3(boardSize / 2 - 0.5, 0, boardSize / 2 - 0.5);
+            
+            // Current position relative to board center
+            const relativePosition = new THREE.Vector3().subVectors(camera.position, boardCenter);
+            const currentDistance = relativePosition.length();
+            
+            // Store original position to revert if needed
+            const originalPosition = camera.position.clone();
             
             switch(direction) {
                 case 'left':
@@ -676,24 +795,33 @@
                     // Move camera position left horizontally
                     camera.position.x -= 2;
                     camera.position.z += 2;
-                    camera.lookAt(boardSize / 2 - 0.5, 0, boardSize / 2 - 0.5);
+                    camera.lookAt(boardCenter);
                     return;
                 case 'rightH':
                     // Move camera position right horizontally
                     camera.position.x += 2;
                     camera.position.z -= 2;
-                    camera.lookAt(boardSize / 2 - 0.5, 0, boardSize / 2 - 0.5);
+                    camera.lookAt(boardCenter);
                     return;
             }
             
             // Apply rotation to camera position relative to board center
-            const boardCenter = new THREE.Vector3(boardSize / 2 - 0.5, 0, boardSize / 2 - 0.5);
-            camera.position.sub(boardCenter);
-            camera.position.applyMatrix4(rotationMatrix);
-            camera.position.add(boardCenter);
+            relativePosition.applyMatrix4(rotationMatrix);
+            
+            // Update camera position
+            camera.position.copy(boardCenter).add(relativePosition);
             
             // Keep camera looking at board center
             camera.lookAt(boardCenter);
+            
+            // Check if camera angle is within constraints
+            const polarAngle = getCameraPolarAngle();
+            
+            if (polarAngle < CAMERA_MIN_POLAR_ANGLE || polarAngle > CAMERA_MAX_POLAR_ANGLE) {
+                // Revert to original position if out of bounds
+                camera.position.copy(originalPosition);
+                camera.lookAt(boardCenter);
+            }
         }
         
         // Handle window resize
@@ -701,6 +829,15 @@
             camera.aspect = boardContainer.clientWidth / boardContainer.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(boardContainer.clientWidth, boardContainer.clientHeight);
+        }
+        
+        // Check if a position is occupied
+        function isPositionOccupied(x, z, excludePieceId = null) {
+            const posKey = getPositionKey(x, z);
+            if (!occupiedPositions[posKey]) return false;
+            
+            // If we're checking for a specific piece (for dragging), exclude it from the check
+            return excludePieceId === null || occupiedPositions[posKey] !== excludePieceId;
         }
         
         // Handle mouse down
@@ -746,6 +883,12 @@
                 const z = Math.floor(point.z);
                 
                 if (x >= 0 && x < boardSize && z >= 0 && z < boardSize) {
+                    // Check if position is already occupied
+                    if (isPositionOccupied(x, z)) {
+                        showErrorMessage("Position already occupied!");
+                        return;
+                    }
+                    
                     // Add new piece
                     const newPiece = {
                         id: Date.now(), // Unique ID
@@ -754,16 +897,11 @@
                         z: z
                     };
                     
-                    // Check if piece already exists at this position
-                    const existingPieceIndex = pieces.findIndex(p => p.x === x && p.z === z);
+                    // Add piece
+                    pieces.push(newPiece);
                     
-                    if (existingPieceIndex !== -1) {
-                        // Replace existing piece
-                        pieces[existingPieceIndex] = newPiece;
-                    } else {
-                        // Add new piece
-                        pieces.push(newPiece);
-                    }
+                    // Mark position as occupied
+                    occupiedPositions[getPositionKey(x, z)] = newPiece.id;
                     
                     updatePieces();
                 }
@@ -805,16 +943,23 @@
                     
                     // Check if within board bounds
                     if (x >= 0 && x < boardSize && z >= 0 && z < boardSize) {
-                        // Check if space is already occupied
-                        const existingPieceIndex = pieces.findIndex(p => p.id !== selectedPiece.userData.id && p.x === x && p.z === z);
-                        
-                        if (existingPieceIndex !== -1) {
+                        // Check if space is already occupied by another piece
+                        if (isPositionOccupied(x, z, selectedPiece.userData.id)) {
                             // Space occupied, move back to original position
+                            showErrorMessage("Position already occupied!");
                             selectedPiece.position.set(pieces[pieceIndex].x + 0.5, 0, pieces[pieceIndex].z + 0.5);
                         } else {
+                            // Remove from old position
+                            const oldPosKey = getPositionKey(pieces[pieceIndex].x, pieces[pieceIndex].z);
+                            delete occupiedPositions[oldPosKey];
+                            
                             // Update piece data
                             pieces[pieceIndex].x = x;
                             pieces[pieceIndex].z = z;
+                            
+                            // Mark new position as occupied
+                            const newPosKey = getPositionKey(x, z);
+                            occupiedPositions[newPosKey] = selectedPiece.userData.id;
                         }
                     } else {
                         // Out of bounds, move back to original position
@@ -856,10 +1001,23 @@
         
         // Reset the scene (called when board size changes)
         function resetScene() {
-            // Remove everything
-            scene.clear();
+            // Remove renderer from container
+            if (renderer && renderer.domElement && renderer.domElement.parentNode) {
+                renderer.domElement.parentNode.removeChild(renderer.domElement);
+            }
+            
+            // Clear the scene
+            if (scene) {
+                while (scene.children.length > 0) {
+                    scene.remove(scene.children[0]);
+                }
+            }
+            
+            // Reset game state
             pieces = [];
             draggableMeshes = [];
+            occupiedPositions = {};
+            shootingStars = [];
             
             // Recreate everything
             init();
