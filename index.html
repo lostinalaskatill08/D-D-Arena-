@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Turn-Based Game Arena</title>
+    <title>Space Battle Arena</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
+            background-color: #000;
+            color: #fff;
         }
         .container {
             width: 100%;
@@ -20,7 +22,7 @@
             display: flex;
             justify-content: space-between;
             padding: 16px;
-            background-color: #f5f5f5;
+            background-color: rgba(50, 50, 80, 0.7);
             margin-bottom: 16px;
             border-radius: 8px;
             flex-wrap: wrap;
@@ -33,11 +35,14 @@
         .control-label {
             margin-right: 8px;
             font-weight: 500;
+            color: #fff;
         }
         select, button {
             padding: 8px;
-            border: 1px solid #ccc;
+            border: 1px solid #444;
             border-radius: 4px;
+            background-color: rgba(30, 30, 50, 0.8);
+            color: #fff;
         }
         button {
             background-color: #3f51b5;
@@ -63,7 +68,7 @@
         .board-container {
             width: 100%;
             height: 600px;
-            border: 1px solid #ccc;
+            border: 1px solid #666;
             border-radius: 8px;
             overflow: hidden;
             position: relative;
@@ -71,10 +76,14 @@
         .legend {
             margin-top: 16px;
             text-align: center;
+            background-color: rgba(30, 30, 50, 0.7);
+            padding: 12px;
+            border-radius: 8px;
         }
         .legend-title {
             font-weight: 500;
             margin-bottom: 8px;
+            color: #fff;
         }
         .legend-items {
             display: flex;
@@ -123,22 +132,24 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: rgba(255, 255, 255, 0.7);
-            color: #333;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
         }
         .positions-output {
             margin-top: 16px;
             width: 100%;
             height: 120px;
             padding: 8px;
-            border: 1px solid #ccc;
+            border: 1px solid #444;
             border-radius: 4px;
             resize: vertical;
             font-family: monospace;
             display: none;
+            background-color: rgba(30, 30, 50, 0.7);
+            color: #fff;
         }
         .copy-success {
-            color: #388e3c;
+            color: #4caf50;
             font-weight: 500;
             margin-top: 8px;
             opacity: 0;
@@ -147,24 +158,28 @@
         .copy-success.visible {
             opacity: 1;
         }
+        h1 {
+            color: #fff;
+            text-shadow: 0 0 10px rgba(100, 100, 255, 0.8);
+        }
     </style>
     <!-- Import three.js library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r132/three.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>3D Turn-Based Game Arena</h1>
+        <h1>Space Battle Arena</h1>
         
         <div class="controls">
             <div class="control-group">
-                <label class="control-label">Piece Type:</label>
+                <label class="control-label">Character Type:</label>
                 <select id="pieceTypeSelect">
-                    <option value="party">Party Member (Cylinder)</option>
-                    <option value="enemy">Enemy (Cone)</option>
-                    <option value="neutral">Neutral (Sphere)</option>
-                    <option value="object">Object (Cube)</option>
-                    <option value="boss">Boss (Octahedron)</option>
-                    <option value="npc">NPC (Tetrahedron)</option>
+                    <option value="party">Party Member (Green)</option>
+                    <option value="enemy">Enemy (Red)</option>
+                    <option value="neutral">Neutral (Yellow)</option>
+                    <option value="object">Object (Blue)</option>
+                    <option value="boss">Boss (Purple)</option>
+                    <option value="npc">NPC (Orange)</option>
                 </select>
             </div>
             <div class="control-group">
@@ -200,31 +215,31 @@
         
         <div class="legend">
             <p class="legend-title">Instructions:</p>
-            <p>Click on the board to place a piece. Drag pieces to reposition them. Use rotation controls to view the board from different angles.</p>
+            <p>Click on the board to place a character. Drag characters to reposition them. Use rotation controls to view the board from different angles.</p>
             <div class="legend-items">
                 <div class="legend-item">
                     <div class="legend-color party-color"></div>
-                    <span>Party Member (Cylinder)</span>
+                    <span>Party Member</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color enemy-color"></div>
-                    <span>Enemy (Cone)</span>
+                    <span>Enemy</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color neutral-color"></div>
-                    <span>Neutral (Sphere)</span>
+                    <span>Neutral</span>
                 </div>
                 <div class="legend-item">
                     <div style="background-color: #2196f3;" class="legend-color"></div>
-                    <span>Object (Cube)</span>
+                    <span>Object</span>
                 </div>
                 <div class="legend-item">
                     <div style="background-color: #9c27b0;" class="legend-color"></div>
-                    <span>Boss (Octahedron)</span>
+                    <span>Boss</span>
                 </div>
                 <div class="legend-item">
                     <div style="background-color: #ff9800;" class="legend-color"></div>
-                    <span>NPC (Tetrahedron)</span>
+                    <span>NPC</span>
                 </div>
             </div>
         </div>
@@ -245,6 +260,8 @@
         let dragOffset = new THREE.Vector3();
         let raycaster = new THREE.Raycaster();
         let mouse = new THREE.Vector2();
+        let stars = [];
+        let shootingStars = [];
         
         const boardContainer = document.getElementById('boardContainer');
         const positionsOutput = document.getElementById('positionsOutput');
@@ -317,14 +334,14 @@
         function init() {
             // Create scene
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87ceeb); // Sky blue background
+            scene.background = new THREE.Color(0x000000); // Black background for space
             
             // Create camera
             camera = new THREE.PerspectiveCamera(
                 45,
                 boardContainer.clientWidth / boardContainer.clientHeight,
                 0.1,
-                1000
+                2000
             );
             resetCameraPosition();
             
@@ -334,24 +351,23 @@
             boardContainer.appendChild(renderer.domElement);
             
             // Add lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
             scene.add(ambientLight);
             
             const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
             directionalLight.position.set(boardSize, boardSize, boardSize);
             scene.add(directionalLight);
             
-            // Create game board
-            const boardGeometry = new THREE.BoxGeometry(boardSize, 0.5, boardSize);
-            const boardMaterial = new THREE.MeshLambertMaterial({ color: 0x5d4037 }); // Brown board
-            board = new THREE.Mesh(boardGeometry, boardMaterial);
-            board.position.set(boardSize / 2 - 0.5, -0.25, boardSize / 2 - 0.5);
-            scene.add(board);
+            // Add point light for dramatic effect
+            const pointLight = new THREE.PointLight(0x6666ff, 1, 100);
+            pointLight.position.set(boardSize / 2, 10, boardSize / 2);
+            scene.add(pointLight);
             
-            // Create grid
-            const gridHelper = new THREE.GridHelper(boardSize, boardSize);
-            gridHelper.position.set(boardSize / 2 - 0.5, 0.01, boardSize / 2 - 0.5);
-            scene.add(gridHelper);
+            // Create space background with stars
+            createStarfield();
+            
+            // Create game board
+            createBoard();
             
             // Handle window resize
             window.addEventListener('resize', onWindowResize);
@@ -361,8 +377,270 @@
             renderer.domElement.addEventListener('mousemove', onMouseMove);
             renderer.domElement.addEventListener('mouseup', onMouseUp);
             
+            // Shooting star timer
+            setInterval(createShootingStar, 400); // Create a shooting star every 400ms
+            
             // Start animation loop
             animate();
+        }
+        
+        // Create starfield background
+        function createStarfield() {
+            // Create the star particles
+            const starsGeometry = new THREE.BufferGeometry();
+            const starsMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 1,
+                sizeAttenuation: false
+            });
+            
+            const starsVertices = [];
+            for (let i = 0; i < 5000; i++) {
+                const x = (Math.random() - 0.5) * 2000;
+                const y = (Math.random() - 0.5) * 2000;
+                const z = (Math.random() - 0.5) * 2000;
+                starsVertices.push(x, y, z);
+            }
+            
+            starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+            const starField = new THREE.Points(starsGeometry, starsMaterial);
+            scene.add(starField);
+        }
+        
+        // Create a shooting star
+        function createShootingStar() {
+            // Create 2-4 shooting stars
+            const numStars = Math.floor(Math.random() * 3) + 2;
+            
+            for (let i = 0; i < numStars; i++) {
+                // Random starting position outside the board
+                const startX = (Math.random() - 0.5) * boardSize * 5;
+                const startY = (Math.random() - 0.5) * boardSize * 5;
+                const startZ = (Math.random() - 0.5) * boardSize * 5;
+                
+                // Direction vector (normalized)
+                const dirX = (Math.random() - 0.5);
+                const dirY = (Math.random() - 0.5);
+                const dirZ = (Math.random() - 0.5);
+                const length = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+                
+                // Create the shooting star geometry - a small line
+                const shootingStarGeometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(6); // Two points (xyz, xyz)
+                
+                // Starting point
+                positions[0] = startX;
+                positions[1] = startY;
+                positions[2] = startZ;
+                
+                // End point - a short distance away in the direction
+                positions[3] = startX + (dirX / length) * 5;
+                positions[4] = startY + (dirY / length) * 5;
+                positions[5] = startZ + (dirZ / length) * 5;
+                
+                shootingStarGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                
+                // Material - bright white with glow
+                const shootingStarMaterial = new THREE.LineBasicMaterial({
+                    color: 0xffffff,
+                    linewidth: 3
+                });
+                
+                const shootingStar = new THREE.Line(shootingStarGeometry, shootingStarMaterial);
+                scene.add(shootingStar);
+                
+                // Store the shooting star with its direction for animation
+                shootingStars.push({
+                    object: shootingStar,
+                    direction: new THREE.Vector3(dirX / length, dirY / length, dirZ / length),
+                    speed: 2 + Math.random() * 5, // Random speed
+                    life: 100 // Life counter before removal
+                });
+            }
+        }
+        
+        // Update shooting stars
+        function updateShootingStars() {
+            for (let i = shootingStars.length - 1; i >= 0; i--) {
+                const star = shootingStars[i];
+                const positions = star.object.geometry.attributes.position.array;
+                
+                // Move both points of the line
+                for (let j = 0; j < 6; j += 3) {
+                    positions[j] += star.direction.x * star.speed;
+                    positions[j + 1] += star.direction.y * star.speed;
+                    positions[j + 2] += star.direction.z * star.speed;
+                }
+                
+                star.object.geometry.attributes.position.needsUpdate = true;
+                
+                // Decrease life
+                star.life--;
+                
+                // Remove if life is depleted
+                if (star.life <= 0) {
+                    scene.remove(star.object);
+                    shootingStars.splice(i, 1);
+                }
+            }
+        }
+        
+        // Create the game board
+        function createBoard() {
+            // Create game board
+            const boardGeometry = new THREE.BoxGeometry(boardSize, 0.5, boardSize);
+            const boardMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x000000,  // Black base color
+                shininess: 30
+            });
+            
+            board = new THREE.Mesh(boardGeometry, boardMaterial);
+            board.position.set(boardSize / 2 - 0.5, -0.25, boardSize / 2 - 0.5);
+            scene.add(board);
+            
+            // Create grid lines - white lines on black board
+            const gridSize = boardSize;
+            const gridDivisions = boardSize;
+            const gridMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+            
+            // Create horizontal grid lines
+            for (let i = 0; i <= gridDivisions; i++) {
+                const x = (i / gridDivisions) * gridSize;
+                
+                const geometryH = new THREE.BufferGeometry();
+                const vertices = new Float32Array([
+                    x, 0.01, 0,
+                    x, 0.01, gridSize
+                ]);
+                geometryH.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+                
+                const line = new THREE.Line(geometryH, gridMaterial);
+                line.position.set(0, 0, 0);
+                board.add(line);
+            }
+            
+            // Create vertical grid lines
+            for (let i = 0; i <= gridDivisions; i++) {
+                const z = (i / gridDivisions) * gridSize;
+                
+                const geometryV = new THREE.BufferGeometry();
+                const vertices = new Float32Array([
+                    0, 0.01, z,
+                    gridSize, 0.01, z
+                ]);
+                geometryV.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+                
+                const line = new THREE.Line(geometryV, gridMaterial);
+                line.position.set(0, 0, 0);
+                board.add(line);
+            }
+        }
+        
+        // Create humanoid figure
+        function createHumanoidFigure(type) {
+            // Group to hold all parts of the humanoid
+            const humanoid = new THREE.Group();
+            
+            let color;
+            let scale = 1;
+            
+            // Different colors for different types
+            switch (type) {
+                case 'party':
+                    color = 0x4caf50; // Green
+                    break;
+                case 'enemy':
+                    color = 0xf44336; // Red
+                    break;
+                case 'neutral':
+                    color = 0xffeb3b; // Yellow
+                    break;
+                case 'object':
+                    color = 0x2196f3; // Blue
+                    break;
+                case 'boss':
+                    color = 0x9c27b0; // Purple
+                    scale = 1.5; // Bosses are bigger
+                    break;
+                case 'npc':
+                    color = 0xff9800; // Orange
+                    break;
+                default:
+                    color = 0x2196f3; // Blue default
+            }
+            
+            const material = new THREE.MeshPhongMaterial({ 
+                color: color,
+                shininess: 30
+            });
+            
+            // Head
+            const headGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+            const head = new THREE.Mesh(headGeometry, material);
+            head.position.y = 0.5;
+            humanoid.add(head);
+            
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(0.1, 0.15, 0.3, 8);
+            const torso = new THREE.Mesh(torsoGeometry, material);
+            torso.position.y = 0.25;
+            humanoid.add(torso);
+            
+            // Arms
+            createLimb(humanoid, material, 0.05, 0.2, -0.1, 0.25, 0.05, Math.PI / 4); // Left arm
+            createLimb(humanoid, material, 0.05, 0.2, 0.1, 0.25, 0.05, -Math.PI / 4); // Right arm
+            
+            // Legs
+            createLimb(humanoid, material, 0.06, 0.25, -0.07, 0.05, 0, 0); // Left leg
+            createLimb(humanoid, material, 0.06, 0.25, 0.07, 0.05, 0, 0); // Right leg
+            
+            // Specific adjustments based on type
+            if (type === 'boss') {
+                // Add a crown for the boss
+                const crownGeometry = new THREE.ConeGeometry(0.1, 0.1, 4);
+                const crownMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0xffd700, // Gold
+                    shininess: 100
+                });
+                const crown = new THREE.Mesh(crownGeometry, crownMaterial);
+                crown.position.y = 0.7;
+                humanoid.add(crown);
+            } else if (type === 'enemy') {
+                // Add a sword for enemies
+                const swordGeometry = new THREE.BoxGeometry(0.03, 0.3, 0.03);
+                const swordMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0xa9a9a9, // Silver
+                    shininess: 80
+                });
+                const sword = new THREE.Mesh(swordGeometry, swordMaterial);
+                sword.position.set(0.2, 0.3, 0.1);
+                sword.rotation.z = Math.PI / 6;
+                humanoid.add(sword);
+            } else if (type === 'party') {
+                // Add a shield for party members
+                const shieldGeometry = new THREE.BoxGeometry(0.15, 0.2, 0.03);
+                const shieldMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0x8b4513, // Brown
+                    shininess: 30
+                });
+                const shield = new THREE.Mesh(shieldGeometry, shieldMaterial);
+                shield.position.set(-0.2, 0.3, 0);
+                humanoid.add(shield);
+            }
+            
+            // Apply overall scale
+            humanoid.scale.set(scale, scale, scale);
+            
+            return humanoid;
+        }
+        
+        // Helper function to create limbs (arms/legs)
+        function createLimb(parent, material, radius, height, x, y, z, rotation) {
+            const limbGeometry = new THREE.CylinderGeometry(radius, radius, height, 8);
+            const limb = new THREE.Mesh(limbGeometry, material);
+            limb.position.set(x, y, z);
+            limb.rotation.z = rotation;
+            parent.add(limb);
         }
         
         // Reset camera to default position
@@ -437,17 +715,25 @@
             raycaster.setFromCamera(mouse, camera);
             
             // Check for intersections with pieces
-            const pieceIntersects = raycaster.intersectObjects(draggableMeshes);
+            const pieceIntersects = raycaster.intersectObjects(draggableMeshes, true);
             if (pieceIntersects.length > 0) {
-                // Start dragging
-                isDragging = true;
-                selectedPiece = pieceIntersects[0].object;
+                // Find the parent (the whole humanoid)
+                let object = pieceIntersects[0].object;
+                while (object.parent && !object.userData.isPiece) {
+                    object = object.parent;
+                }
                 
-                // Calculate drag offset
-                const planeIntersect = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0.5);
-                const intersection = new THREE.Vector3();
-                raycaster.ray.intersectPlane(planeIntersect, intersection);
-                dragOffset.copy(selectedPiece.position).sub(intersection);
+                if (object.userData.isPiece) {
+                    // Start dragging
+                    isDragging = true;
+                    selectedPiece = object;
+                    
+                    // Calculate drag offset
+                    const planeIntersect = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+                    const intersection = new THREE.Vector3();
+                    raycaster.ray.intersectPlane(planeIntersect, intersection);
+                    dragOffset.copy(selectedPiece.position).sub(intersection);
+                }
                 
                 return;
             }
@@ -496,7 +782,7 @@
             
             // Cast ray to plane
             raycaster.setFromCamera(mouse, camera);
-            const planeIntersect = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0.5);
+            const planeIntersect = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
             const intersection = new THREE.Vector3();
             raycaster.ray.intersectPlane(planeIntersect, intersection);
             
@@ -506,140 +792,4 @@
             // Snap to grid
             selectedPiece.position.x = Math.floor(selectedPiece.position.x) + 0.5;
             selectedPiece.position.z = Math.floor(selectedPiece.position.z) + 0.5;
-            selectedPiece.position.y = 0.5;
-        }
-        
-        // Handle mouse up
-        function onMouseUp() {
-            if (isDragging && selectedPiece) {
-                // Get new grid position
-                const newX = Math.floor(selectedPiece.position.x);
-                const newZ = Math.floor(selectedPiece.position.z);
-                
-                // Check if the position is valid
-                if (newX >= 0 && newX < boardSize && newZ >= 0 && newZ < boardSize) {
-                    // Find piece in array
-                    const pieceIndex = pieces.findIndex(p => p.id === selectedPiece.userData.id);
-                    if (pieceIndex !== -1) {
-                        // Check if there's another piece at this position
-                        const collidingPieceIndex = pieces.findIndex(p => 
-                            p.id !== selectedPiece.userData.id && p.x === newX && p.z === newZ);
-                        
-                        if (collidingPieceIndex !== -1) {
-                            // If collision, return to original position
-                            selectedPiece.position.x = pieces[pieceIndex].x + 0.5;
-                            selectedPiece.position.z = pieces[pieceIndex].z + 0.5;
-                        } else {
-                            // Update position in pieces array
-                            pieces[pieceIndex].x = newX;
-                            pieces[pieceIndex].z = newZ;
-                        }
-                    }
-                } else {
-                    // If out of bounds, find and restore original position
-                    const pieceIndex = pieces.findIndex(p => p.id === selectedPiece.userData.id);
-                    if (pieceIndex !== -1) {
-                        selectedPiece.position.x = pieces[pieceIndex].x + 0.5;
-                        selectedPiece.position.z = pieces[pieceIndex].z + 0.5;
-                    }
-                }
-            }
-            
-            // End dragging
-            isDragging = false;
-            selectedPiece = null;
-        }
-        
-        // Update pieces on the board
-        function updatePieces() {
-            // Remove all existing piece meshes
-            scene.children.forEach(child => {
-                if (child.userData && child.userData.isPiece) {
-                    scene.remove(child);
-                }
-            });
-            
-            // Clear draggable meshes array
-            draggableMeshes = [];
-            
-            // Create new pieces
-            pieces.forEach(piece => {
-                let geometry, material;
-                
-                // Different shapes and colors for different piece types
-                switch (piece.type) {
-                    case 'party':
-                        geometry = new THREE.CylinderGeometry(0.3, 0.3, 0.6, 32);
-                        material = new THREE.MeshLambertMaterial({ color: 0x4caf50 }); // Green
-                        break;
-                    case 'enemy':
-                        geometry = new THREE.ConeGeometry(0.3, 0.8, 32);
-                        material = new THREE.MeshLambertMaterial({ color: 0xf44336 }); // Red
-                        break;
-                    case 'neutral':
-                        geometry = new THREE.SphereGeometry(0.3, 32, 32);
-                        material = new THREE.MeshLambertMaterial({ color: 0xffeb3b }); // Yellow
-                        break;
-                    case 'object':
-                        geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-                        material = new THREE.MeshLambertMaterial({ color: 0x2196f3 }); // Blue
-                        break;
-                    case 'boss':
-                        geometry = new THREE.OctahedronGeometry(0.4);
-                        material = new THREE.MeshLambertMaterial({ color: 0x9c27b0 }); // Purple
-                        break;
-                    case 'npc':
-                        geometry = new THREE.TetrahedronGeometry(0.4);
-                        material = new THREE.MeshLambertMaterial({ color: 0xff9800 }); // Orange
-                        break;
-                    default:
-                        geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-                        material = new THREE.MeshLambertMaterial({ color: 0x2196f3 }); // Blue
-                }
-                
-                const mesh = new THREE.Mesh(geometry, material);
-                mesh.position.set(piece.x + 0.5, 0.5, piece.z + 0.5);
-                mesh.userData = { 
-                    isPiece: true, 
-                    id: piece.id,
-                    pieceType: piece.type
-                };
-                
-                scene.add(mesh);
-                draggableMeshes.push(mesh);
-            });
-        }
-        
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-        }
-        
-        // Reset the scene when board size changes
-        function resetScene() {
-            // Remove current renderer
-            if (renderer && renderer.domElement) {
-                boardContainer.removeChild(renderer.domElement);
-            }
-            
-            // Remove event listeners
-            window.removeEventListener('resize', onWindowResize);
-            if (renderer && renderer.domElement) {
-                renderer.domElement.removeEventListener('mousedown', onMouseDown);
-                renderer.domElement.removeEventListener('mousemove', onMouseMove);
-                renderer.domElement.removeEventListener('mouseup', onMouseUp);
-            }
-            
-            // Clear pieces
-            pieces = [];
-            
-            // Initialize new scene
-            init();
-        }
-        
-        // Start the application
-        init();
-    </script>
-</body>
-</html>
+            selectedPiece.position.y = 0; // Keep on board surface
