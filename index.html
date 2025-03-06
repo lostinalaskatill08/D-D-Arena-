@@ -23,6 +23,8 @@
             background-color: #f5f5f5;
             margin-bottom: 16px;
             border-radius: 8px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .control-group {
             display: flex;
@@ -38,13 +40,25 @@
             border-radius: 4px;
         }
         button {
-            background-color: #f44336;
+            background-color: #3f51b5;
             color: white;
             border: none;
             cursor: pointer;
         }
         button:hover {
+            background-color: #303f9f;
+        }
+        button.clear-btn {
+            background-color: #f44336;
+        }
+        button.clear-btn:hover {
             background-color: #d32f2f;
+        }
+        button.copy-btn {
+            background-color: #4caf50;
+        }
+        button.copy-btn:hover {
+            background-color: #388e3c;
         }
         .board-container {
             width: 100%;
@@ -52,6 +66,7 @@
             border: 1px solid #ccc;
             border-radius: 8px;
             overflow: hidden;
+            position: relative;
         }
         .legend {
             margin-top: 16px;
@@ -65,6 +80,7 @@
             display: flex;
             justify-content: center;
             gap: 16px;
+            flex-wrap: wrap;
         }
         .legend-item {
             display: flex;
@@ -85,6 +101,49 @@
         .neutral-color {
             background-color: #ffeb3b;
         }
+        .rotation-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .rotation-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .rotation-btn {
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .positions-output {
+            margin-top: 16px;
+            width: 100%;
+            height: 120px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: monospace;
+            display: none;
+        }
+        .copy-success {
+            color: #388e3c;
+            font-weight: 500;
+            margin-top: 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .copy-success.visible {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -95,9 +154,12 @@
             <div class="control-group">
                 <label class="control-label">Piece Type:</label>
                 <select id="pieceTypeSelect">
-                    <option value="party">Party Member</option>
-                    <option value="enemy">Enemy</option>
-                    <option value="neutral">Neutral</option>
+                    <option value="party">Party Member (Cylinder)</option>
+                    <option value="enemy">Enemy (Cone)</option>
+                    <option value="neutral">Neutral (Sphere)</option>
+                    <option value="object">Object (Cube)</option>
+                    <option value="boss">Boss (Octahedron)</option>
+                    <option value="npc">NPC (Tetrahedron)</option>
                 </select>
             </div>
             <div class="control-group">
@@ -109,41 +171,79 @@
                     <option value="24" selected>24x24</option>
                 </select>
             </div>
-            <button id="clearButton">Clear Board</button>
+            <div class="control-group">
+                <button id="copyButton" class="copy-btn">Copy Positions</button>
+                <button id="clearButton" class="clear-btn">Clear Board</button>
+                <button id="resetViewButton">Reset View</button>
+            </div>
         </div>
         
-        <div id="boardContainer" class="board-container"></div>
-        
-        <div class="legend">
-            <p class="legend-title">Instructions:</p>
-            <p>Click on the board to place a piece. Use the board size dropdown to adjust the grid dimensions.</p>
-            <div class="legend-items">
-                <div class="legend-item">
-                    <div class="legend-color party-color"></div>
-                    <span>Party Member</span>
+        <div id="boardContainer" class="board-container">
+            <div class="rotation-controls">
+                <div class="rotation-row">
+                    <button class="rotation-btn" id="rotateLeftBtn">⟲</button>
+                    <button class="rotation-btn" id="rotateUpBtn">↑</button>
+                    <button class="rotation-btn" id="rotateRightBtn">⟳</button>
                 </div>
-                <div class="legend-item">
-                    <div class="legend-color enemy-color"></div>
-                    <span>Enemy</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color neutral-color"></div>
-                    <span>Neutral</span>
+                <div class="rotation-row">
+                    <button class="rotation-btn" id="rotateLeftHorizontalBtn">←</button>
+                    <button class="rotation-btn" id="rotateDownBtn">↓</button>
+                    <button class="rotation-btn" id="rotateRightHorizontalBtn">→</button>
                 </div>
             </div>
         </div>
+        
+        <div class="legend">
+            <p class="legend-title">Instructions:</p>
+            <p>Click on the board to place a piece. Drag pieces to reposition them. Use rotation controls to view the board from different angles.</p>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <div class="legend-color party-color"></div>
+                    <span>Party Member (Cylinder)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color enemy-color"></div>
+                    <span>Enemy (Cone)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color neutral-color"></div>
+                    <span>Neutral (Sphere)</span>
+                </div>
+                <div class="legend-item">
+                    <div style="background-color: #2196f3;" class="legend-color"></div>
+                    <span>Object (Cube)</span>
+                </div>
+                <div class="legend-item">
+                    <div style="background-color: #9c27b0;" class="legend-color"></div>
+                    <span>Boss (Octahedron)</span>
+                </div>
+                <div class="legend-item">
+                    <div style="background-color: #ff9800;" class="legend-color"></div>
+                    <span>NPC (Tetrahedron)</span>
+                </div>
+            </div>
+        </div>
+        
+        <textarea id="positionsOutput" class="positions-output" readonly></textarea>
+        <div id="copySuccess" class="copy-success">Positions copied to clipboard!</div>
     </div>
 
-    <!-- Import three.js library -->
+    <!-- Import three.js library and OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/DragControls.js"></script>
     
     <script>
         // Global variables
-        let scene, camera, renderer, board;
+        let scene, camera, renderer, board, controls;
         let pieces = [];
+        let dragControls;
+        let draggableMeshes = [];
         let selectedPieceType = 'party';
         let boardSize = 24;
         const boardContainer = document.getElementById('boardContainer');
+        const positionsOutput = document.getElementById('positionsOutput');
+        const copySuccess = document.getElementById('copySuccess');
         
         // Setup event listeners
         document.getElementById('pieceTypeSelect').addEventListener('change', function(e) {
@@ -160,6 +260,54 @@
             updatePieces();
         });
         
+        document.getElementById('resetViewButton').addEventListener('click', function() {
+            resetCameraPosition();
+        });
+        
+        document.getElementById('copyButton').addEventListener('click', function() {
+            // Generate JSON representation of all pieces
+            const positionsData = JSON.stringify(pieces, null, 2);
+            
+            // Show in textarea
+            positionsOutput.value = positionsData;
+            positionsOutput.style.display = 'block';
+            
+            // Copy to clipboard
+            positionsOutput.select();
+            document.execCommand('copy');
+            
+            // Show success message
+            copySuccess.classList.add('visible');
+            setTimeout(() => {
+                copySuccess.classList.remove('visible');
+            }, 3000);
+        });
+        
+        // Rotation button handlers
+        document.getElementById('rotateLeftBtn').addEventListener('click', function() {
+            rotateCamera('left');
+        });
+        
+        document.getElementById('rotateRightBtn').addEventListener('click', function() {
+            rotateCamera('right');
+        });
+        
+        document.getElementById('rotateUpBtn').addEventListener('click', function() {
+            rotateCamera('up');
+        });
+        
+        document.getElementById('rotateDownBtn').addEventListener('click', function() {
+            rotateCamera('down');
+        });
+        
+        document.getElementById('rotateLeftHorizontalBtn').addEventListener('click', function() {
+            rotateCamera('leftH');
+        });
+        
+        document.getElementById('rotateRightHorizontalBtn').addEventListener('click', function() {
+            rotateCamera('rightH');
+        });
+        
         // Initialize the scene
         function init() {
             // Create scene
@@ -173,13 +321,19 @@
                 0.1,
                 1000
             );
-            camera.position.set(boardSize * 0.7, boardSize * 1.2, boardSize * 0.7);
-            camera.lookAt(boardSize / 2 - 0.5, 0, boardSize / 2 - 0.5);
+            resetCameraPosition();
             
             // Create renderer
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(boardContainer.clientWidth, boardContainer.clientHeight);
             boardContainer.appendChild(renderer.domElement);
+            
+            // Create OrbitControls for rotation
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.25;
+            controls.screenSpacePanning = false;
+            controls.maxPolarAngle = Math.PI / 2;
             
             // Add lights
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -211,6 +365,38 @@
             animate();
         }
         
+        // Reset camera to default position
+        function resetCameraPosition() {
+            camera.position.set(boardSize * 0.7, boardSize * 1.2, boardSize * 0.7);
+            camera.lookAt(boardSize / 2 - 0.5, 0, boardSize / 2 - 0.5);
+            if (controls) {
+                controls.update();
+            }
+        }
+        
+        // Rotate camera based on direction
+        function rotateCamera(direction) {
+            const rotationAngle = Math.PI / 8; // 22.5 degrees
+            
+            if (direction === 'left') {
+                controls.rotateLeft(rotationAngle);
+            } else if (direction === 'right') {
+                controls.rotateLeft(-rotationAngle);
+            } else if (direction === 'up') {
+                controls.rotateUp(rotationAngle);
+            } else if (direction === 'down') {
+                controls.rotateUp(-rotationAngle);
+            } else if (direction === 'leftH') {
+                camera.position.x -= 2;
+                camera.position.z += 2;
+            } else if (direction === 'rightH') {
+                camera.position.x += 2;
+                camera.position.z -= 2;
+            }
+            
+            controls.update();
+        }
+        
         // Handle window resize
         function onWindowResize() {
             camera.aspect = boardContainer.clientWidth / boardContainer.clientHeight;
@@ -220,6 +406,11 @@
         
         // Handle board clicks
         function onBoardClick(event) {
+            // Don't add pieces if user is dragging (holding right mouse button)
+            if (controls.state !== -1) {
+                return;
+            }
+            
             // Calculate mouse position
             const rect = renderer.domElement.getBoundingClientRect();
             const clickMouse = new THREE.Vector2(
@@ -272,6 +463,9 @@
                 }
             });
             
+            // Clear draggable meshes array
+            draggableMeshes = [];
+            
             // Create new pieces
             pieces.forEach(piece => {
                 let geometry, material;
@@ -290,6 +484,18 @@
                         geometry = new THREE.SphereGeometry(0.3, 32, 32);
                         material = new THREE.MeshLambertMaterial({ color: 0xffeb3b }); // Yellow
                         break;
+                    case 'object':
+                        geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+                        material = new THREE.MeshLambertMaterial({ color: 0x2196f3 }); // Blue
+                        break;
+                    case 'boss':
+                        geometry = new THREE.OctahedronGeometry(0.4);
+                        material = new THREE.MeshLambertMaterial({ color: 0x9c27b0 }); // Purple
+                        break;
+                    case 'npc':
+                        geometry = new THREE.TetrahedronGeometry(0.4);
+                        material = new THREE.MeshLambertMaterial({ color: 0xff9800 }); // Orange
+                        break;
                     default:
                         geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
                         material = new THREE.MeshLambertMaterial({ color: 0x2196f3 }); // Blue
@@ -297,15 +503,90 @@
                 
                 const mesh = new THREE.Mesh(geometry, material);
                 mesh.position.set(piece.x + 0.5, 0.5, piece.z + 0.5);
-                mesh.userData = { isPiece: true, id: piece.id };
+                mesh.userData = { 
+                    isPiece: true, 
+                    id: piece.id,
+                    pieceType: piece.type,
+                    initialX: piece.x,
+                    initialZ: piece.z
+                };
                 
                 scene.add(mesh);
+                draggableMeshes.push(mesh);
+            });
+            
+            // Setup drag controls
+            setupDragControls();
+        }
+        
+        // Setup drag controls for pieces
+        function setupDragControls() {
+            // If drag controls already exist, dispose them
+            if (dragControls) {
+                dragControls.dispose();
+            }
+            
+            // Create new drag controls
+            dragControls = new THREE.DragControls(draggableMeshes, camera, renderer.domElement);
+            
+            // Add event listeners
+            dragControls.addEventListener('dragstart', function(event) {
+                // Disable orbit controls while dragging
+                controls.enabled = false;
+                
+                // Save initial position
+                event.object.userData.dragStartX = event.object.position.x;
+                event.object.userData.dragStartZ = event.object.position.z;
+            });
+            
+            dragControls.addEventListener('drag', function(event) {
+                // Restrict movement to xz plane
+                event.object.position.y = 0.5;
+                
+                // Snap to grid
+                event.object.position.x = Math.floor(event.object.position.x) + 0.5;
+                event.object.position.z = Math.floor(event.object.position.z) + 0.5;
+            });
+            
+            dragControls.addEventListener('dragend', function(event) {
+                // Re-enable orbit controls
+                controls.enabled = true;
+                
+                // Get new grid position
+                const newX = Math.floor(event.object.position.x);
+                const newZ = Math.floor(event.object.position.z);
+                
+                // Check if the position is valid
+                if (newX >= 0 && newX < boardSize && newZ >= 0 && newZ < boardSize) {
+                    // Find piece in array
+                    const pieceIndex = pieces.findIndex(p => p.id === event.object.userData.id);
+                    if (pieceIndex !== -1) {
+                        // Update position in pieces array
+                        pieces[pieceIndex].x = newX;
+                        pieces[pieceIndex].z = newZ;
+                    }
+                } else {
+                    // If out of bounds, return to original position
+                    event.object.position.x = event.object.userData.dragStartX;
+                    event.object.position.z = event.object.userData.dragStartZ;
+                }
+                
+                // Check if there's a piece at the new position
+                const existingPieceIndex = pieces.findIndex(p => 
+                    p.id !== event.object.userData.id && p.x === newX && p.z === newZ);
+                
+                if (existingPieceIndex !== -1) {
+                    // If there's already another piece, return to original position
+                    event.object.position.x = event.object.userData.dragStartX;
+                    event.object.position.z = event.object.userData.dragStartZ;
+                }
             });
         }
         
         // Animation loop
         function animate() {
             requestAnimationFrame(animate);
+            controls.update();
             renderer.render(scene, camera);
         }
         
@@ -320,6 +601,14 @@
             window.removeEventListener('resize', onWindowResize);
             if (renderer && renderer.domElement) {
                 renderer.domElement.removeEventListener('click', onBoardClick);
+            }
+            
+            // Dispose of controls
+            if (controls) {
+                controls.dispose();
+            }
+            if (dragControls) {
+                dragControls.dispose();
             }
             
             // Clear pieces
