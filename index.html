@@ -4,7 +4,7 @@ import * as THREE from 'three';
 const TurnBasedGameArena = () => {
   const mountRef = useRef(null);
   const [selectedPieceType, setSelectedPieceType] = useState('party');
-  const [boardSize, setBoardSize] = useState(8);
+  const [boardSize, setBoardSize] = useState(24);
   const [pieces, setPieces] = useState([]);
   
   useEffect(() => {
@@ -19,7 +19,7 @@ const TurnBasedGameArena = () => {
       0.1, 
       1000
     );
-    camera.position.set(boardSize * 0.8, boardSize * 0.8, boardSize * 0.8);
+    camera.position.set(boardSize * 0.7, boardSize * 1.2, boardSize * 0.7);
     camera.lookAt(boardSize / 2 - 0.5, 0, boardSize / 2 - 0.5);
     
     // Renderer setup
@@ -107,9 +107,7 @@ const TurnBasedGameArena = () => {
     const animate = () => {
       requestAnimationFrame(animate);
       
-      // Rotate camera slowly
-      camera.position.x = boardSize * 0.8 * Math.cos(Date.now() * 0.0001);
-      camera.position.z = boardSize * 0.8 * Math.sin(Date.now() * 0.0001);
+      // Static camera position (no rotation)
       camera.lookAt(boardSize / 2 - 0.5, 0, boardSize / 2 - 0.5);
       
       renderer.render(scene, camera);
@@ -204,10 +202,10 @@ const TurnBasedGameArena = () => {
             onChange={handleBoardSizeChange}
             className="p-2 border rounded"
           >
-            <option value="6">6x6</option>
-            <option value="8">8x8</option>
-            <option value="10">10x10</option>
             <option value="12">12x12</option>
+            <option value="16">16x16</option>
+            <option value="20">20x20</option>
+            <option value="24">24x24</option>
           </select>
         </div>
         <button 
@@ -224,7 +222,7 @@ const TurnBasedGameArena = () => {
       
       <div className="mt-4 text-center">
         <p className="font-medium">Instructions:</p>
-        <p>Click on the board to place a piece. The camera slowly rotates to show the 3D view.</p>
+        <p>Click on the board to place a piece. Use the board size dropdown to adjust the grid dimensions.</p>
         <div className="mt-2 flex justify-center space-x-4">
           <div className="flex items-center">
             <div className="w-4 h-4 bg-green-500 rounded-full mr-1"></div>
