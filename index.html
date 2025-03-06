@@ -113,8 +113,11 @@
         .enemy-color {
             background-color: #f44336;
         }
-        .neutral-color {
-            background-color: #ffeb3b;
+        .obstacle-color {
+            background-color: #8b4513;
+        }
+        .water-color {
+            background-color: #2196f3;
         }
         .rotation-controls {
             position: absolute;
@@ -236,8 +239,8 @@
                 <select id="pieceTypeSelect">
                     <option value="party">Party Member (Green)</option>
                     <option value="enemy">Enemy (Red)</option>
-                    <option value="neutral">Neutral (Yellow)</option>
-                    <option value="object">Object (Blue)</option>
+                    <option value="obstacle">Obstacle (Brown)</option>
+                    <option value="water">Water (Blue)</option>
                     <option value="boss">Boss (Purple)</option>
                     <option value="npc">NPC (Orange)</option>
                 </select>
@@ -295,12 +298,12 @@
                     <span>Enemy</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color neutral-color"></div>
-                    <span>Neutral</span>
+                    <div class="legend-color obstacle-color"></div>
+                    <span>Obstacle</span>
                 </div>
                 <div class="legend-item">
-                    <div style="background-color: #2196f3;" class="legend-color"></div>
-                    <span>Object</span>
+                    <div class="legend-color water-color"></div>
+                    <span>Water</span>
                 </div>
                 <div class="legend-item">
                     <div style="background-color: #9c27b0;" class="legend-color"></div>
@@ -331,7 +334,6 @@
         let mouse = new THREE.Vector2();
         let shootingStars = [];
         let errorMessageTimeout;
-        let grid;
         
         const boardContainer = document.getElementById('boardContainer');
         const positionsOutput = document.getElementById('positionsOutput');
@@ -628,7 +630,7 @@
         
         // Create the game board
         function createBoard() {
-            // Create the board plane - black part (slightly smaller than the grid)
+            // Create the board plane - black part
             const boardGeometry = new THREE.BoxGeometry(boardSize, 0.5, boardSize);
             const boardMaterial = new THREE.MeshPhongMaterial({ 
                 color: 0x000000,  // Black base color
@@ -650,92 +652,43 @@
             const border = new THREE.Mesh(borderGeometry, borderMaterial);
             border.position.set(boardSize / 2 - 0.5, -0.4, boardSize / 2 - 0.5);
             scene.add(border);
-            
-            // Create grid directly on the board - not extending past it
-            createGrid();
         }
         
-        // Create grid lines contained within the board boundaries
-        function createGrid() {
-            // Create a group for all grid lines
-            grid = new THREE.Group();
+        // Create game piece based on type
+        function createGamePiece(type) {
+            // Different types of pieces
+            let pieceObject = new THREE.Group();
             
-            // Create a plane as a "clipping boundary" for the grid lines
-            const clipPlane = new THREE.Mesh(
-                new THREE.PlaneGeometry(boardSize, boardSize),
-                new THREE.MeshBasicMaterial({ 
-                    color: 0x000000, 
-                    transparent: true,
-                    opacity: 0,
-                    side: THREE.DoubleSide
-                })
-            );
-            clipPlane.rotation.x = -Math.PI / 2;
-            clipPlane.position.y = 0.02; // Slightly above the board
-            grid.add(clipPlane);
-            
-            // Use line segments for grid lines (more precise)
-            const gridMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-            
-            // Create horizontal grid lines
-            for (let i = 0; i <= boardSize; i++) {
-                const points = [];
-                points.push(new THREE.Vector3(0, 0, i));
-                points.push(new THREE.Vector3(boardSize, 0, i));
-                
-                const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                const line = new THREE.Line(lineGeometry, gridMaterial);
-                grid.add(line);
-            }
-            
-            // Create vertical grid lines
-            for (let i = 0; i <= boardSize; i++) {
-                const points = [];
-                points.push(new THREE.Vector3(i, 0, 0));
-                points.push(new THREE.Vector3(i, 0, boardSize));
-                
-                const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                const line = new THREE.Line(lineGeometry, gridMaterial);
-                grid.add(line);
-            }
-            
-            // Position the grid correctly on the board
-            grid.position.set(0, 0.02, 0); // Slightly above the board
-            board.add(grid); // Add the grid as a child of the board so it moves with it
-        }
-        
-        // Create humanoid figure with larger scale
-        function createHumanoidFigure(type) {
-            // Group to hold all parts of the humanoid
-            const humanoid = new THREE.Group();
-            
-            let baseScale = 1.8; // Increased base scale for all figures
-            let color;
-            
-            // Different colors for different types and set scale for bosses
             switch (type) {
                 case 'party':
-                    color = 0x4caf50; // Green
+                    pieceObject = createHumanoidFigure(0x4caf50); // Green
                     break;
                 case 'enemy':
-                    color = 0xf44336; // Red
+                    pieceObject = createHumanoidFigure(0xf44336); // Red
                     break;
-                case 'neutral':
-                    color = 0xffeb3b; // Yellow
+                case 'obstacle':
+                    pieceObject = createObstacle(); // Brown rectangular obstacle
                     break;
-                case 'object':
-                    color = 0x2196f3; // Blue
+                case 'water':
+                    pieceObject = createWater(); // Blue shallow square for water
                     break;
                 case 'boss':
-                    color = 0x9c27b0; // Purple
-                    baseScale = 3.0; // Much larger for bosses
+                    pieceObject = createHumanoidFigure(0x9c27b0, 3.0); // Purple, much larger
                     break;
                 case 'npc':
-                    color = 0xff9800; // Orange
+                    pieceObject = createHumanoidFigure(0xff9800); // Orange
                     break;
                 default:
-                    color = 0x2196f3; // Blue default
+                    pieceObject = createHumanoidFigure(0x4caf50); // Default to green
             }
+            
+            return pieceObject;
+        }
+        
+        // Create a humanoid figure for characters
+        function createHumanoidFigure(color, scale = 1.8) {
+            // Group to hold all parts of the humanoid
+            const humanoid = new THREE.Group();
             
             const material = new THREE.MeshPhongMaterial({ 
                 color: color,
@@ -762,8 +715,8 @@
             createLimb(humanoid, material, 0.06, 0.25, -0.07, 0.05, 0, 0); // Left leg
             createLimb(humanoid, material, 0.06, 0.25, 0.07, 0.05, 0, 0); // Right leg
             
-            // Specific adjustments based on type
-            if (type === 'boss') {
+            // Special equipment for specific types
+            if (color === 0x9c27b0) { // Boss (Purple)
                 // Add a crown for the boss
                 const crownGeometry = new THREE.ConeGeometry(0.1, 0.1, 4);
                 const crownMaterial = new THREE.MeshPhongMaterial({ 
@@ -773,7 +726,7 @@
                 const crown = new THREE.Mesh(crownGeometry, crownMaterial);
                 crown.position.y = 0.7;
                 humanoid.add(crown);
-            } else if (type === 'enemy') {
+            } else if (color === 0xf44336) { // Enemy (Red)
                 // Add a sword for enemies
                 const swordGeometry = new THREE.BoxGeometry(0.03, 0.3, 0.03);
                 const swordMaterial = new THREE.MeshPhongMaterial({ 
@@ -784,7 +737,7 @@
                 sword.position.set(0.2, 0.3, 0.1);
                 sword.rotation.z = Math.PI / 6;
                 humanoid.add(sword);
-            } else if (type === 'party') {
+            } else if (color === 0x4caf50) { // Party (Green)
                 // Add a shield for party members
                 const shieldGeometry = new THREE.BoxGeometry(0.15, 0.2, 0.03);
                 const shieldMaterial = new THREE.MeshPhongMaterial({ 
@@ -797,9 +750,78 @@
             }
             
             // Apply overall scale
-            humanoid.scale.set(baseScale, baseScale, baseScale);
+            humanoid.scale.set(scale, scale, scale);
             
             return humanoid;
+        }
+        
+        // Create obstacle (brown rectangle)
+        function createObstacle() {
+            // Create a rectangular obstacle
+            const obstacleGeometry = new THREE.BoxGeometry(0.8, 0.6, 0.8);
+            const obstacleMaterial = new THREE.MeshPhongMaterial({
+                color: 0x8b4513, // Brown
+                shininess: 20
+            });
+            
+            const obstacle = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
+            obstacle.position.y = 0.3; // Half height
+            
+            // Add some texture/details to make it look like a crate or rock
+            const detailGeometry = new THREE.BoxGeometry(0.82, 0.05, 0.82);
+            const detailMaterial = new THREE.MeshPhongMaterial({
+                color: 0x73452c, // Darker brown for details
+                shininess: 10
+            });
+            
+            const topDetail = new THREE.Mesh(detailGeometry, detailMaterial);
+            topDetail.position.y = 0.3;
+            
+            const obstacleGroup = new THREE.Group();
+            obstacleGroup.add(obstacle);
+            obstacleGroup.add(topDetail);
+            
+            // Apply overall scale
+            obstacleGroup.scale.set(1.5, 1.5, 1.5);
+            
+            return obstacleGroup;
+        }
+        
+        // Create water (shallow blue square)
+        function createWater() {
+            // Create a shallow blue square for water
+            const waterGeometry = new THREE.BoxGeometry(0.9, 0.1, 0.9);
+            const waterMaterial = new THREE.MeshPhongMaterial({
+                color: 0x2196f3, // Blue
+                transparent: true,
+                opacity: 0.8,
+                shininess: 90
+            });
+            
+            const water = new THREE.Mesh(waterGeometry, waterMaterial);
+            water.position.y = 0.05; // Very low height (ankle level)
+            
+            // Add a slight wave effect with a second layer
+            const waveGeometry = new THREE.PlaneGeometry(0.85, 0.85);
+            const waveMaterial = new THREE.MeshPhongMaterial({
+                color: 0x64b5f6, // Lighter blue
+                transparent: true,
+                opacity: 0.5,
+                shininess: 100
+            });
+            
+            const wave = new THREE.Mesh(waveGeometry, waveMaterial);
+            wave.rotation.x = -Math.PI / 2; // Rotate to lie flat
+            wave.position.y = 0.11; // Just above the water
+            
+            const waterGroup = new THREE.Group();
+            waterGroup.add(water);
+            waterGroup.add(wave);
+            
+            // Apply overall scale
+            waterGroup.scale.set(1.5, 1.0, 1.5);
+            
+            return waterGroup;
         }
         
         // Helper function to create limbs (arms/legs)
@@ -933,7 +955,7 @@
             // Check for intersections with pieces
             const pieceIntersects = raycaster.intersectObjects(draggableMeshes, true);
             if (pieceIntersects.length > 0) {
-                // Find the parent (the whole humanoid)
+                // Find the parent (the whole piece)
                 let object = pieceIntersects[0].object;
                 while (object.parent && !object.userData.isPiece) {
                     object = object.parent;
@@ -1009,7 +1031,19 @@
             // Snap to grid
             selectedPiece.position.x = Math.floor(selectedPiece.position.x) + 0.5;
             selectedPiece.position.z = Math.floor(selectedPiece.position.z) + 0.5;
-            selectedPiece.position.y = 0; // Keep on board surface
+            
+            // Keep piece at appropriate height based on its type
+            const pieceIndex = pieces.findIndex(p => p.id === selectedPiece.userData.id);
+            if (pieceIndex !== -1) {
+                const pieceType = pieces[pieceIndex].type;
+                if (pieceType === 'water') {
+                    selectedPiece.position.y = 0.05; // Water stays very low
+                } else if (pieceType === 'obstacle') {
+                    selectedPiece.position.y = 0.3; // Obstacles at medium height
+                } else {
+                    selectedPiece.position.y = 0; // Characters at ground level
+                }
+            }
         }
         
         // Handle mouse up
@@ -1028,6 +1062,14 @@
                             // Space occupied, move back to original position
                             showErrorMessage("Position already occupied!");
                             selectedPiece.position.set(pieces[pieceIndex].x + 0.5, 0, pieces[pieceIndex].z + 0.5);
+                            
+                            // Reset height
+                            const pieceType = pieces[pieceIndex].type;
+                            if (pieceType === 'water') {
+                                selectedPiece.position.y = 0.05;
+                            } else if (pieceType === 'obstacle') {
+                                selectedPiece.position.y = 0.3;
+                            }
                         } else {
                             // Remove from old position
                             const oldPosKey = getPositionKey(pieces[pieceIndex].x, pieces[pieceIndex].z);
@@ -1044,6 +1086,14 @@
                     } else {
                         // Out of bounds, move back to original position
                         selectedPiece.position.set(pieces[pieceIndex].x + 0.5, 0, pieces[pieceIndex].z + 0.5);
+                        
+                        // Reset height
+                        const pieceType = pieces[pieceIndex].type;
+                        if (pieceType === 'water') {
+                            selectedPiece.position.y = 0.05;
+                        } else if (pieceType === 'obstacle') {
+                            selectedPiece.position.y = 0.3;
+                        }
                     }
                 }
             }
@@ -1063,19 +1113,27 @@
             
             // Create new pieces from data
             pieces.forEach(pieceData => {
-                const figure = createHumanoidFigure(pieceData.type);
-                figure.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
+                const piece = createGamePiece(pieceData.type);
+                
+                // Position based on type
+                if (pieceData.type === 'water') {
+                    piece.position.set(pieceData.x + 0.5, 0.05, pieceData.z + 0.5);
+                } else if (pieceData.type === 'obstacle') {
+                    piece.position.set(pieceData.x + 0.5, 0.3, pieceData.z + 0.5);
+                } else {
+                    piece.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
+                }
                 
                 // Add piece metadata
-                figure.userData = {
+                piece.userData = {
                     isPiece: true,
                     id: pieceData.id,
                     type: pieceData.type
                 };
                 
                 // Add to scene and tracking arrays
-                scene.add(figure);
-                draggableMeshes.push(figure);
+                scene.add(piece);
+                draggableMeshes.push(piece);
             });
         }
         
