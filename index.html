@@ -1,4 +1,4 @@
-a<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,7 +9,121 @@ a<!DOCTYPE html>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
 
         body {
-            margin: 0;
+            });
+            
+            // Second pass: create and place pieces
+            sortedPieces.forEach(pieceData => {
+                const piece = createGamePiece(pieceData.type);
+                
+                // Position based on type
+                if (pieceData.type === 'water') {
+                    piece.position.set(pieceData.x + 0.5, 0.05, pieceData.z + 0.5);
+                } else if (pieceData.type === 'obstacle') {
+                    piece.position.set(pieceData.x + 0.5, 0.3, pieceData.z + 0.5);
+                } else if (pieceData.type === 'trap') {
+                    piece.position.set(pieceData.x + 0.5, 0.2, pieceData.z + 0.5);
+                } else if (pieceData.type === 'structure' || pieceData.type === 'merchant') {
+                    piece.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
+                } else if (pieceData.type === 'castle') {
+                    piece.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
+                } else {
+                    piece.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
+                    
+                    // Enhanced facing logic with threat proximity detection
+                    if ((pieceData.type === 'party' || pieceData.type === 'npc') && enemyPositions.length > 0) {
+                        // Party members and NPCs face enemies/bosses
+                        const threats = [];
+                        
+                        // First check for threats within 5 squares
+                        for (const enemy of enemyPositions) {
+                            const distance = calculateDistance(pieceData.x, pieceData.z, enemy.x, enemy.z);
+                            threats.push({
+                                position: enemy,
+                                distance: distance
+                            });
+                        }
+                        
+                        // Sort threats by distance
+                        threats.sort((a, b) => a.distance - b.distance);
+                        
+                        // Find closest threat within 5 squares if available, otherwise use the closest threat overall
+                        const closestThreat = threats.find(threat => threat.distance <= 5) || threats[0];
+                        
+                        if (closestThreat) {
+                            const angle = Math.atan2(
+                                closestThreat.position.z - pieceData.z,
+                                closestThreat.position.x - pieceData.x
+                            );
+                            piece.rotation.y = angle;
+                        }
+                    } else if ((pieceData.type === 'enemy' || pieceData.type === 'boss') && partyPositions.length > 0) {
+                        // Enemies and bosses face party members and NPCs
+                        const threats = [];
+                        
+                        // First check for threats within 5 squares
+                        for (const ally of partyPositions) {
+                            const distance = calculateDistance(pieceData.x, pieceData.z, ally.x, ally.z);
+                            threats.push({
+                                position: ally,
+                                distance: distance
+                            });
+                        }
+                        
+                        // Sort threats by distance
+                        threats.sort((a, b) => a.distance - b.distance);
+                        
+                        // Find closest threat within 5 squares if available, otherwise use the closest threat overall
+                        const closestThreat = threats.find(threat => threat.distance <= 5) || threats[0];
+                        
+                        if (closestThreat) {
+                            const angle = Math.atan2(
+                                closestThreat.position.z - pieceData.z,
+                                closestThreat.position.x - pieceData.x
+                            );
+                            piece.rotation.y = angle;
+                        }
+                    }
+                }
+                
+                // Add piece metadata
+                piece.userData = {
+                    isPiece: true,
+                    id: pieceData.id,
+                    type: pieceData.type
+                };
+                
+                // Add to scene and tracking arrays
+                scene.add(piece);
+                draggableMeshes.push(piece);
+            });
+        }
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Update shooting stars
+            updateShootingStars(0.016); // Approximately 60fps
+            
+            // Animate trap/spell runes if any exist
+            draggableMeshes.forEach(piece => {
+                if (piece.userData.type === 'trap') {
+                    // Find all the rune symbols (children with rotation speed data)
+                    piece.children.forEach(child => {
+                        if (child.userData.rotationSpeed) {
+                            child.rotation.x += child.userData.rotationSpeed.x;
+                            child.rotation.y += child.userData.rotationSpeed.y;
+                            child.rotation.z += child.userData.rotationSpeed.z;
+                        }
+                    });
+                }
+            });
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', init);margin: 0;
             padding: 0;
             font-family: 'Cinzel', serif;
             background-color: #1a1a1a;
