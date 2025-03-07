@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space Battle Arena</title>
+    <title>D&D Battle Arena</title>
     <!-- Import Cinzel font from Google Fonts to match the Dice Roller theme -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
@@ -231,7 +231,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Space Battle Arena</h1>
+        <h1>D&D Battle Arena</h1>
         
         <div class="controls">
             <div class="control-group">
@@ -242,7 +242,7 @@
                     <option value="obstacle">Obstacle (Brown)</option>
                     <option value="water">Water (Blue)</option>
                     <option value="boss">Boss (Dark Blue)</option>
-                    <option value="trap">Trap/Spell (Blue)</option>
+                    <option value="trap">Trap/Spell (Purple)</option>
                     <option value="npc">NPC (Orange)</option>
                 </select>
             </div>
@@ -306,7 +306,7 @@
                     <span>Boss</span>
                 </div>
                 <div class="legend-item">
-                    <div style="background-color: #0000ff;" class="legend-color"></div>
+                    <div style="background-color: #800080;" class="legend-color"></div>
                     <span>Trap/Spell</span>
                 </div>
                 <div class="legend-item">
@@ -996,8 +996,8 @@
             // Add some magical effect (small particles)
             const particlesGeometry = new THREE.SphereGeometry(0.05, 8, 8);
             const particlesMaterial = new THREE.MeshPhongMaterial({
-                color: 0x00ffff, // Cyan
-                emissive: 0x00ffff,
+                color: 0xd896ff, // Light purple
+                emissive: 0xb366ff,
                 emissiveIntensity: 0.5,
                 transparent: true,
                 opacity: 0.7
