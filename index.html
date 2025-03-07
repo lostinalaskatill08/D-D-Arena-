@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+a<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -244,6 +244,8 @@
                     <option value="boss">Boss (Dark Blue)</option>
                     <option value="trap">Trap/Spell (Purple)</option>
                     <option value="structure">Structure (Gray)</option>
+                    <option value="castle">Castle (Gray)</option>
+                    <option value="merchant">Merchant (Yellow)</option>
                     <option value="npc">NPC (Orange)</option>
                 </select>
             </div>
@@ -313,6 +315,14 @@
                 <div class="legend-item">
                     <div style="background-color: #808080;" class="legend-color"></div>
                     <span>Structure</span>
+                </div>
+                <div class="legend-item">
+                    <div style="background-color: #696969;" class="legend-color"></div>
+                    <span>Castle</span>
+                </div>
+                <div class="legend-item">
+                    <div style="background-color: #DAA520;" class="legend-color"></div>
+                    <span>Merchant</span>
                 </div>
                 <div class="legend-item">
                     <div style="background-color: #ff9800;" class="legend-color"></div>
@@ -722,6 +732,12 @@
                 case 'structure':
                     pieceObject = createStructure(); // Gray house structure
                     break;
+                case 'castle':
+                    pieceObject = createCastle(); // Gray large castle
+                    break;
+                case 'merchant':
+                    pieceObject = createMerchant(); // Merchant with cart
+                    break;
                 case 'npc':
                     pieceObject = createHumanoidFigure(0xff9800, 1.8, true); // Orange
                     break;
@@ -792,6 +808,370 @@
             structureGroup.scale.set(1.5, 1.5, 1.5);
             
             return structureGroup;
+        }
+        
+        // Create a 6x6 castle structure
+        function createCastle() {
+            const castleGroup = new THREE.Group();
+            
+            // Base/ground of castle
+            const baseGeometry = new THREE.BoxGeometry(6, 0.2, 6);
+            const baseMaterial = new THREE.MeshPhongMaterial({
+                color: 0x888888, // Gray stone
+                shininess: 10
+            });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.y = 0.1; // Just above ground
+            castleGroup.add(base);
+            
+            // Main castle walls
+            const wallHeight = 1.2;
+            const wallThickness = 0.4;
+            
+            // Create wall segments (four sides)
+            const wallMaterial = new THREE.MeshPhongMaterial({
+                color: 0x696969, // Darker gray for walls
+                shininess: 20
+            });
+            
+            // North wall
+            const northWallGeometry = new THREE.BoxGeometry(6, wallHeight, wallThickness);
+            const northWall = new THREE.Mesh(northWallGeometry, wallMaterial);
+            northWall.position.set(0, wallHeight/2 + 0.2, -3 + wallThickness/2);
+            castleGroup.add(northWall);
+            
+            // South wall
+            const southWallGeometry = new THREE.BoxGeometry(6, wallHeight, wallThickness);
+            const southWall = new THREE.Mesh(southWallGeometry, wallMaterial);
+            southWall.position.set(0, wallHeight/2 + 0.2, 3 - wallThickness/2);
+            castleGroup.add(southWall);
+            
+            // East wall
+            const eastWallGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, 6 - wallThickness*2);
+            const eastWall = new THREE.Mesh(eastWallGeometry, wallMaterial);
+            eastWall.position.set(3 - wallThickness/2, wallHeight/2 + 0.2, 0);
+            castleGroup.add(eastWall);
+            
+            // West wall
+            const westWallGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, 6 - wallThickness*2);
+            const westWall = new THREE.Mesh(westWallGeometry, wallMaterial);
+            westWall.position.set(-3 + wallThickness/2, wallHeight/2 + 0.2, 0);
+            castleGroup.add(westWall);
+            
+            // Corner towers (four corners)
+            const towerRadius = 0.6;
+            const towerHeight = 1.8;
+            const towerGeometry = new THREE.CylinderGeometry(towerRadius, towerRadius, towerHeight, 8);
+            const towerMaterial = new THREE.MeshPhongMaterial({
+                color: 0x696969, // Match wall color
+                shininess: 20
+            });
+            
+            // Northwest tower
+            const nwTower = new THREE.Mesh(towerGeometry, towerMaterial);
+            nwTower.position.set(-3 + towerRadius, towerHeight/2 + 0.2, -3 + towerRadius);
+            castleGroup.add(nwTower);
+            
+            // Northeast tower
+            const neTower = new THREE.Mesh(towerGeometry, towerMaterial);
+            neTower.position.set(3 - towerRadius, towerHeight/2 + 0.2, -3 + towerRadius);
+            castleGroup.add(neTower);
+            
+            // Southeast tower
+            const seTower = new THREE.Mesh(towerGeometry, towerMaterial);
+            seTower.position.set(3 - towerRadius, towerHeight/2 + 0.2, 3 - towerRadius);
+            castleGroup.add(seTower);
+            
+            // Southwest tower
+            const swTower = new THREE.Mesh(towerGeometry, towerMaterial);
+            swTower.position.set(-3 + towerRadius, towerHeight/2 + 0.2, 3 - towerRadius);
+            castleGroup.add(swTower);
+            
+            // Tower conical roofs
+            const roofGeometry = new THREE.ConeGeometry(towerRadius + 0.1, 0.8, 8);
+            const roofMaterial = new THREE.MeshPhongMaterial({
+                color: 0x8B0000, // Red/brown roof
+                shininess: 30
+            });
+            
+            // Add roofs to all towers
+            const nwRoof = new THREE.Mesh(roofGeometry, roofMaterial);
+            nwRoof.position.set(-3 + towerRadius, towerHeight + 0.6, -3 + towerRadius);
+            castleGroup.add(nwRoof);
+            
+            const neRoof = new THREE.Mesh(roofGeometry, roofMaterial);
+            neRoof.position.set(3 - towerRadius, towerHeight + 0.6, -3 + towerRadius);
+            castleGroup.add(neRoof);
+            
+            const seRoof = new THREE.Mesh(roofGeometry, roofMaterial);
+            seRoof.position.set(3 - towerRadius, towerHeight + 0.6, 3 - towerRadius);
+            castleGroup.add(seRoof);
+            
+            const swRoof = new THREE.Mesh(roofGeometry, roofMaterial);
+            swRoof.position.set(-3 + towerRadius, towerHeight + 0.6, 3 - towerRadius);
+            castleGroup.add(swRoof);
+            
+            // Add a gate (in the south wall)
+            const gateWidth = 1.0;
+            const gateHeight = 0.8;
+            const gateDepth = wallThickness + 0.05; // Slightly deeper than wall
+            const gateGeometry = new THREE.BoxGeometry(gateWidth, gateHeight, gateDepth);
+            const gateMaterial = new THREE.MeshPhongMaterial({
+                color: 0x8B4513, // Brown wooden gate
+                shininess: 30
+            });
+            const gate = new THREE.Mesh(gateGeometry, gateMaterial);
+            gate.position.set(0, gateHeight/2 + 0.2, 3 - wallThickness/2);
+            castleGroup.add(gate);
+            
+            // Add a keep in the center
+            const keepWidth = 2.0;
+            const keepDepth = 2.0;
+            const keepHeight = 2.5;
+            const keepGeometry = new THREE.BoxGeometry(keepWidth, keepHeight, keepDepth);
+            const keepMaterial = new THREE.MeshPhongMaterial({
+                color: 0x808080, // Gray stone
+                shininess: 20
+            });
+            const keep = new THREE.Mesh(keepGeometry, keepMaterial);
+            keep.position.set(0, keepHeight/2 + 0.2, 0);
+            castleGroup.add(keep);
+            
+            // Add a roof to the keep
+            const keepRoofGeometry = new THREE.ConeGeometry(Math.sqrt(keepWidth*keepWidth + keepDepth*keepDepth)/2, 1.2, 4);
+            const keepRoof = new THREE.Mesh(keepRoofGeometry, roofMaterial);
+            keepRoof.position.set(0, keepHeight + 0.8, 0);
+            keepRoof.rotation.y = Math.PI/4; // Rotate 45 degrees
+            castleGroup.add(keepRoof);
+            
+            // Add some windows to keep
+            const windowGeometry = new THREE.PlaneGeometry(0.2, 0.3);
+            const windowMaterial = new THREE.MeshPhongMaterial({
+                color: 0xadd8e6, // Light blue
+                shininess: 50,
+                side: THREE.DoubleSide
+            });
+            
+            // Add windows to keep (multiple sides)
+            const keepWindow1 = new THREE.Mesh(windowGeometry, windowMaterial);
+            keepWindow1.position.set(0, keepHeight/2 + 0.2, keepDepth/2 + 0.01);
+            castleGroup.add(keepWindow1);
+            
+            const keepWindow2 = new THREE.Mesh(windowGeometry, windowMaterial);
+            keepWindow2.position.set(keepWidth/2 + 0.01, keepHeight/2 + 0.2, 0);
+            keepWindow2.rotation.y = Math.PI/2;
+            castleGroup.add(keepWindow2);
+            
+            // Add wall crenellations
+            const crenellationHeight = 0.25;
+            const crenellationWidth = 0.25;
+            const crenellationMaterial = wallMaterial;
+            
+            // Add crenellations to north wall
+            for (let x = -2.75; x <= 2.75; x += 0.5) {
+                if (Math.abs(x) % 1 < 0.1) continue; // Skip some for gaps
+                const crenGeometry = new THREE.BoxGeometry(crenellationWidth, crenellationHeight, wallThickness);
+                const crenellation = new THREE.Mesh(crenGeometry, crenellationMaterial);
+                crenellation.position.set(x, wallHeight + crenellationHeight/2 + 0.2, -3 + wallThickness/2);
+                castleGroup.add(crenellation);
+            }
+            
+            // Add crenellations to south wall
+            for (let x = -2.75; x <= 2.75; x += 0.5) {
+                if (Math.abs(x) < 0.6) continue; // Skip center for gate
+                const crenGeometry = new THREE.BoxGeometry(crenellationWidth, crenellationHeight, wallThickness);
+                const crenellation = new THREE.Mesh(crenGeometry, crenellationMaterial);
+                crenellation.position.set(x, wallHeight + crenellationHeight/2 + 0.2, 3 - wallThickness/2);
+                castleGroup.add(crenellation);
+            }
+            
+            // Add crenellations to east wall
+            for (let z = -2.75; z <= 2.75; z += 0.5) {
+                if (Math.abs(z) % 1 < 0.1) continue; // Skip some for gaps
+                const crenGeometry = new THREE.BoxGeometry(wallThickness, crenellationHeight, crenellationWidth);
+                const crenellation = new THREE.Mesh(crenGeometry, crenellationMaterial);
+                crenellation.position.set(3 - wallThickness/2, wallHeight + crenellationHeight/2 + 0.2, z);
+                castleGroup.add(crenellation);
+            }
+            
+            // Add crenellations to west wall
+            for (let z = -2.75; z <= 2.75; z += 0.5) {
+                if (Math.abs(z) % 1 < 0.1) continue; // Skip some for gaps
+                const crenGeometry = new THREE.BoxGeometry(wallThickness, crenellationHeight, crenellationWidth);
+                const crenellation = new THREE.Mesh(crenGeometry, crenellationMaterial);
+                crenellation.position.set(-3 + wallThickness/2, wallHeight + crenellationHeight/2 + 0.2, z);
+                castleGroup.add(crenellation);
+            }
+            
+            // Add flags on top of towers
+            const flagpoleGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.8, 8);
+            const flagpoleMaterial = new THREE.MeshPhongMaterial({
+                color: 0xa9a9a9, // Silver
+                shininess: 80
+            });
+            
+            const flagGeometry = new THREE.PlaneGeometry(0.3, 0.2);
+            const flagMaterial = new THREE.MeshPhongMaterial({
+                color: 0xff0000, // Red flag
+                shininess: 30,
+                side: THREE.DoubleSide
+            });
+            
+            // Add flag to northeast tower
+            const neFlagpole = new THREE.Mesh(flagpoleGeometry, flagpoleMaterial);
+            neFlagpole.position.set(3 - towerRadius, towerHeight + 1.0, -3 + towerRadius);
+            castleGroup.add(neFlagpole);
+            
+            const neFlag = new THREE.Mesh(flagGeometry, flagMaterial);
+            neFlag.position.set(3 - towerRadius + 0.15, towerHeight + 1.1, -3 + towerRadius);
+            castleGroup.add(neFlag);
+            
+            // Scale to match game board
+            castleGroup.scale.set(0.5, 0.5, 0.5);
+            
+            return castleGroup;
+        }
+        
+        // Create a merchant with cart
+        function createMerchant() {
+            const merchantGroup = new THREE.Group();
+            
+            // Create the merchant stall base (wooden platform)
+            const stallBaseGeometry = new THREE.BoxGeometry(1.8, 0.1, 1.4);
+            const woodMaterial = new THREE.MeshPhongMaterial({
+                color: 0x8B4513, // Brown
+                shininess: 30
+            });
+            const stallBase = new THREE.Mesh(stallBaseGeometry, woodMaterial);
+            stallBase.position.y = 0.05;
+            merchantGroup.add(stallBase);
+            
+            // Create the stall canopy/roof
+            const canopyGeometry = new THREE.BoxGeometry(1.9, 0.05, 1.5);
+            const canopyMaterial = new THREE.MeshPhongMaterial({
+                color: 0xDAA520, // Golden brown
+                shininess: 20
+            });
+            const canopy = new THREE.Mesh(canopyGeometry, canopyMaterial);
+            canopy.position.y = 1.1;
+            merchantGroup.add(canopy);
+            
+            // Create the stall posts
+            const postGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.0, 8);
+            const postMaterial = new THREE.MeshPhongMaterial({
+                color: 0x8B4513, // Brown
+                shininess: 20
+            });
+            
+            // Add four posts
+            const postPositions = [
+                {x: -0.85, z: -0.65},
+                {x: 0.85, z: -0.65},
+                {x: -0.85, z: 0.65},
+                {x: 0.85, z: 0.65}
+            ];
+            
+            postPositions.forEach(pos => {
+                const post = new THREE.Mesh(postGeometry, postMaterial);
+                post.position.set(pos.x, 0.55, pos.z);
+                merchantGroup.add(post);
+            });
+            
+            // Create a merchant figure (person)
+            const merchant = createHumanoidFigure(0xFFD700, 1.5, false); // Golden color for merchant
+            merchant.position.set(0, 0.1, 0.5);
+            merchant.rotation.y = Math.PI; // Face toward front of stall
+            merchantGroup.add(merchant);
+            
+            // Add merchant's clothes - apron
+            const apronGeometry = new THREE.PlaneGeometry(0.25, 0.3);
+            const apronMaterial = new THREE.MeshPhongMaterial({
+                color: 0xDA9100, // Darker gold
+                shininess: 10,
+                side: THREE.DoubleSide
+            });
+            const apron = new THREE.Mesh(apronGeometry, apronMaterial);
+            apron.position.set(0, 0.25, 0.51);
+            apron.rotation.x = Math.PI * 0.05; // Slight tilt
+            merchantGroup.add(apron);
+            
+            // Add goods on the stall
+            // 1. Various small boxes/crates
+            const createCrate = (width, height, depth, color, x, y, z) => {
+                const crateGeometry = new THREE.BoxGeometry(width, height, depth);
+                const crateMaterial = new THREE.MeshPhongMaterial({
+                    color: color,
+                    shininess: 20
+                });
+                const crate = new THREE.Mesh(crateGeometry, crateMaterial);
+                crate.position.set(x, y, z);
+                return crate;
+            };
+            
+            // Add various crates and goods
+            merchantGroup.add(createCrate(0.2, 0.15, 0.2, 0xA0522D, -0.6, 0.15, 0));
+            merchantGroup.add(createCrate(0.3, 0.1, 0.2, 0x8B4513, -0.3, 0.15, -0.3));
+            merchantGroup.add(createCrate(0.25, 0.18, 0.25, 0x654321, 0.4, 0.15, -0.3));
+            
+            // 2. Add some fabric rolls
+            const fabricRollGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.25, 16);
+            const fabricColors = [0x9370DB, 0x6495ED, 0xFF6347, 0x32CD32];
+            
+            for (let i = 0; i < 3; i++) {
+                const fabricMaterial = new THREE.MeshPhongMaterial({
+                    color: fabricColors[i % fabricColors.length],
+                    shininess: 10
+                });
+                const fabricRoll = new THREE.Mesh(fabricRollGeometry, fabricMaterial);
+                fabricRoll.rotation.z = Math.PI/2; // Lay horizontal
+                fabricRoll.position.set(0.6 - i*0.2, 0.2, 0.1);
+                merchantGroup.add(fabricRoll);
+            }
+            
+            // 3. Add some bottles/potions
+            const potionGeometry = new THREE.CylinderGeometry(0.04, 0.03, 0.12, 8);
+            const potionColors = [0x9400D3, 0x00BFFF, 0xFF4500, 0x32CD32];
+            
+            for (let i = 0; i < 4; i++) {
+                const potionMaterial = new THREE.MeshPhongMaterial({
+                    color: potionColors[i % potionColors.length],
+                    shininess: 90,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const potion = new THREE.Mesh(potionGeometry, potionMaterial);
+                // Position potions in a small group
+                const angle = (i / 4) * Math.PI;
+                const radius = 0.08;
+                potion.position.set(
+                    -0.4 + Math.cos(angle) * radius,
+                    0.18,
+                    -0.1 + Math.sin(angle) * radius
+                );
+                merchantGroup.add(potion);
+            }
+            
+            // 4. Add a small sign
+            const signPostGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.4, 8);
+            const signPost = new THREE.Mesh(signPostGeometry, woodMaterial);
+            signPost.position.set(0.8, 0.25, -0.6);
+            merchantGroup.add(signPost);
+            
+            const signGeometry = new THREE.PlaneGeometry(0.3, 0.2);
+            const signMaterial = new THREE.MeshPhongMaterial({
+                color: 0xEEDDC4, // Light tan
+                shininess: 10,
+                side: THREE.DoubleSide
+            });
+            const sign = new THREE.Mesh(signGeometry, signMaterial);
+            sign.position.set(0.8, 0.5, -0.6);
+            sign.rotation.y = Math.PI / 4; // Angle the sign
+            merchantGroup.add(sign);
+            
+            // Scale the entire merchant stall
+            merchantGroup.scale.set(1.5, 1.5, 1.5);
+            
+            return merchantGroup;
         }
         
         // Create a humanoid figure for characters
@@ -1191,6 +1571,55 @@
             return trapGroup;
         }
         
+        // Check for structure-to-structure minimum distance (2 squares)
+        function checkStructureCollision(x, z, excludePieceId = null) {
+            // First, check if the position itself is occupied
+            if (isPositionOccupied(x, z, excludePieceId)) return true;
+            
+            // For structure-to-structure distance, check if there are any other structures within 2 squares
+            for (let i = -2; i <= 2; i++) {
+                for (let j = -2; j <= 2; j++) {
+                    const checkX = x + i;
+                    const checkZ = z + j;
+                    
+                    // Skip if out of bounds
+                    if (checkX < 0 || checkX >= boardSize || checkZ < 0 || checkZ >= boardSize) continue;
+                    
+                    // Skip the center position (already checked above)
+                    if (i === 0 && j === 0) continue;
+                    
+                    const posKey = getPositionKey(checkX, checkZ);
+                    const pieceId = occupiedPositions[posKey];
+                    
+                    // Skip if position is not occupied or is occupied by the excluded piece
+                    if (!pieceId || pieceId === excludePieceId) continue;
+                    
+                    // Find the piece type at this position
+                    const foundPiece = pieces.find(p => p.id === pieceId);
+                    if (foundPiece && (foundPiece.type === 'structure' || foundPiece.type === 'castle' || foundPiece.type === 'merchant')) {
+                        return true; // Found another structure-like object within 2 squares
+                    }
+                }
+            }
+            
+            // No structure collision detected
+            return false;
+        }
+        
+        // Helper function to calculate distance between two points
+        function calculateDistance(x1, z1, x2, z2) {
+            return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(z2 - z1, 2));
+        }
+        
+        // Check if a position is occupied
+        function isPositionOccupied(x, z, excludePieceId = null) {
+            const posKey = getPositionKey(x, z);
+            if (!occupiedPositions[posKey]) return false;
+            
+            // If we're checking for a specific piece (for dragging), exclude it from the check
+            return excludePieceId === null || occupiedPositions[posKey] !== excludePieceId;
+        }
+        
         // Reset camera to default position
         function resetCameraPosition() {
             camera.position.set(boardSize * 0.7, boardSize * 1.2, boardSize * 0.7);
@@ -1291,50 +1720,6 @@
             renderer.setSize(boardContainer.clientWidth, boardContainer.clientHeight);
         }
         
-        // Check if a position is occupied
-        function isPositionOccupied(x, z, excludePieceId = null) {
-            const posKey = getPositionKey(x, z);
-            if (!occupiedPositions[posKey]) return false;
-            
-            // If we're checking for a specific piece (for dragging), exclude it from the check
-            return excludePieceId === null || occupiedPositions[posKey] !== excludePieceId;
-        }
-        
-        // Check for structure-to-structure minimum distance (2 squares)
-        function checkStructureCollision(x, z, excludePieceId = null) {
-            // First, check if the position itself is occupied
-            if (isPositionOccupied(x, z, excludePieceId)) return true;
-            
-            // For structure-to-structure distance, check if there are any other structures within 2 squares
-            for (let i = -2; i <= 2; i++) {
-                for (let j = -2; j <= 2; j++) {
-                    const checkX = x + i;
-                    const checkZ = z + j;
-                    
-                    // Skip if out of bounds
-                    if (checkX < 0 || checkX >= boardSize || checkZ < 0 || checkZ >= boardSize) continue;
-                    
-                    // Skip the center position (already checked above)
-                    if (i === 0 && j === 0) continue;
-                    
-                    const posKey = getPositionKey(checkX, checkZ);
-                    const pieceId = occupiedPositions[posKey];
-                    
-                    // Skip if position is not occupied or is occupied by the excluded piece
-                    if (!pieceId || pieceId === excludePieceId) continue;
-                    
-                    // Find the piece type at this position
-                    const foundPiece = pieces.find(p => p.id === pieceId);
-                    if (foundPiece && foundPiece.type === 'structure') {
-                        return true; // Found another structure within 2 squares
-                    }
-                }
-            }
-            
-            // No structure collision detected
-            return false;
-        }
-        
         // Handle mouse down
         function onMouseDown(event) {
             // Calculate mouse position
@@ -1422,11 +1807,11 @@
                     // Check for any collisions based on piece type
                     let collision = false;
                     
-                    if (selectedPieceType === 'structure') {
+                    if (selectedPieceType === 'structure' || selectedPieceType === 'castle' || selectedPieceType === 'merchant') {
                         // For structures, check for structure-to-structure minimum distance
                         collision = checkStructureCollision(x, z);
                         if (collision) {
-                            showErrorMessage("Structures must be at least 2 squares apart!");
+                            showErrorMessage("Buildings must be at least 2 squares apart!");
                             return;
                         }
                     } else {
@@ -1509,8 +1894,10 @@
                     selectedPiece.position.y = 0.3; // Obstacles at medium height
                 } else if (pieceType === 'trap') {
                     selectedPiece.position.y = 0.2; // Traps at moderate height
-                } else if (pieceType === 'structure') {
+                } else if (pieceType === 'structure' || pieceType === 'merchant') {
                     selectedPiece.position.y = 0; // Structure at ground level
+                } else if (pieceType === 'castle') {
+                    selectedPiece.position.y = 0; // Castle at ground level
                 } else {
                     selectedPiece.position.y = 0; // Characters at ground level
                 }
@@ -1534,10 +1921,25 @@
                     
                     // Check if within board bounds
                     if (x >= 0 && x < boardSize && z >= 0 && z < boardSize) {
-                        // Check if space is already occupied by another piece
-                        if (isPositionOccupied(x, z, selectedPiece.userData.id)) {
-                            // Space occupied, move back to original position
-                            showErrorMessage("Position already occupied!");
+                        let isColliding = false;
+                        
+                        // Check for collisions based on piece type
+                        if (pieces[pieceIndex].type === 'structure' || pieces[pieceIndex].type === 'castle' || pieces[pieceIndex].type === 'merchant') {
+                            // For structures, check for structure-to-structure minimum distance
+                            isColliding = checkStructureCollision(x, z, selectedPiece.userData.id);
+                            if (isColliding) {
+                                showErrorMessage("Buildings must be at least 2 squares apart!");
+                            }
+                        } else {
+                            // For other piece types, just check if position is occupied
+                            isColliding = isPositionOccupied(x, z, selectedPiece.userData.id);
+                            if (isColliding) {
+                                showErrorMessage("Position already occupied!");
+                            }
+                        }
+                        
+                        if (isColliding) {
+                            // Move back to original position
                             selectedPiece.position.set(pieces[pieceIndex].x + 0.5, 0, pieces[pieceIndex].z + 0.5);
                             
                             // Reset height
@@ -1548,7 +1950,9 @@
                                 selectedPiece.position.y = 0.3;
                             } else if (pieceType === 'trap') {
                                 selectedPiece.position.y = 0.2;
-                            } else if (pieceType === 'structure') {
+                            } else if (pieceType === 'structure' || pieceType === 'merchant') {
+                                selectedPiece.position.y = 0;
+                            } else if (pieceType === 'castle') {
                                 selectedPiece.position.y = 0;
                             }
                         } else {
@@ -1601,7 +2005,7 @@
             // This helps with determining facing direction
             const sortedPieces = [...pieces].sort((a, b) => {
                 // Process static objects first, then NPCs, then enemies and party members
-                const typeOrder = { 'obstacle': 1, 'water': 2, 'trap': 3, 'structure': 4, 'npc': 5, 'boss': 6, 'enemy': 7, 'party': 8 };
+                const typeOrder = { 'obstacle': 1, 'water': 2, 'trap': 3, 'structure': 4, 'castle': 5, 'merchant': 6, 'npc': 7, 'boss': 8, 'enemy': 9, 'party': 10 };
                 return (typeOrder[a.type] || 0) - (typeOrder[b.type] || 0);
             });
             
@@ -1626,142 +2030,3 @@
                         z: pieceData.z 
                     });
                 }
-            });
-            
-            // Second pass: create and place pieces
-            sortedPieces.forEach(pieceData => {
-                const piece = createGamePiece(pieceData.type);
-                
-                // Position based on type
-                if (pieceData.type === 'water') {
-                    piece.position.set(pieceData.x + 0.5, 0.05, pieceData.z + 0.5);
-                } else if (pieceData.type === 'obstacle') {
-                    piece.position.set(pieceData.x + 0.5, 0.3, pieceData.z + 0.5);
-                } else if (pieceData.type === 'trap') {
-                    piece.position.set(pieceData.x + 0.5, 0.2, pieceData.z + 0.5);
-                } else if (pieceData.type === 'structure') {
-                    piece.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
-                } else {
-                    piece.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
-                    
-                    // Enhanced facing logic with threat proximity detection
-                    if ((pieceData.type === 'party' || pieceData.type === 'npc') && enemyPositions.length > 0) {
-                        // Party members and NPCs face enemies/bosses
-                        const threats = [];
-                        
-                        // First check for threats within 5 squares
-                        for (const enemy of enemyPositions) {
-                            const distance = calculateDistance(pieceData.x, pieceData.z, enemy.x, enemy.z);
-                            threats.push({
-                                position: enemy,
-                                distance: distance
-                            });
-                        }
-                        
-                        // Sort threats by distance
-                        threats.sort((a, b) => a.distance - b.distance);
-                        
-                        // Find closest threat within 5 squares if available, otherwise use the closest threat overall
-                        const closestThreat = threats.find(threat => threat.distance <= 5) || threats[0];
-                        
-                        if (closestThreat) {
-                            const angle = Math.atan2(
-                                closestThreat.position.z - pieceData.z,
-                                closestThreat.position.x - pieceData.x
-                            );
-                            piece.rotation.y = angle;
-                        }
-                    } else if ((pieceData.type === 'enemy' || pieceData.type === 'boss') && partyPositions.length > 0) {
-                        // Enemies and bosses face party members and NPCs
-                        const threats = [];
-                        
-                        // First check for threats within 5 squares
-                        for (const ally of partyPositions) {
-                            const distance = calculateDistance(pieceData.x, pieceData.z, ally.x, ally.z);
-                            threats.push({
-                                position: ally,
-                                distance: distance
-                            });
-                        }
-                        
-                        // Sort threats by distance
-                        threats.sort((a, b) => a.distance - b.distance);
-                        
-                        // Find closest threat within 5 squares if available, otherwise use the closest threat overall
-                        const closestThreat = threats.find(threat => threat.distance <= 5) || threats[0];
-                        
-                        if (closestThreat) {
-                            const angle = Math.atan2(
-                                closestThreat.position.z - pieceData.z,
-                                closestThreat.position.x - pieceData.x
-                            );
-                            piece.rotation.y = angle;
-                        }
-                    }
-                }
-                
-                // Add piece metadata
-                piece.userData = {
-                    isPiece: true,
-                    id: pieceData.id,
-                    type: pieceData.type
-                };
-                
-                // Add to scene and tracking arrays
-                scene.add(piece);
-                draggableMeshes.push(piece);
-            });
-        }
-        
-        // Helper function to find the closest position
-        function findClosestPosition(x, z, positions) {
-            if (!positions || positions.length === 0) return null;
-            
-            let closestPos = positions[0];
-            let closestDist = calculateDistance(x, z, positions[0].x, positions[0].z);
-            
-            for (let i = 1; i < positions.length; i++) {
-                const dist = calculateDistance(x, z, positions[i].x, positions[i].z);
-                if (dist < closestDist) {
-                    closestDist = dist;
-                    closestPos = positions[i];
-                }
-            }
-            
-            return closestPos;
-        }
-        
-        // Helper function to calculate distance between two points
-        function calculateDistance(x1, z1, x2, z2) {
-            return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(z2 - z1, 2));
-        }
-        
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            // Update shooting stars
-            updateShootingStars(0.016); // Approximately 60fps
-            
-            // Animate trap/spell runes if any exist
-            draggableMeshes.forEach(piece => {
-                if (piece.userData.type === 'trap') {
-                    // Find all the rune symbols (children with rotation speed data)
-                    piece.children.forEach(child => {
-                        if (child.userData.rotationSpeed) {
-                            child.rotation.x += child.userData.rotationSpeed.x;
-                            child.rotation.y += child.userData.rotationSpeed.y;
-                            child.rotation.z += child.userData.rotationSpeed.z;
-                        }
-                    });
-                }
-            });
-            
-            renderer.render(scene, camera);
-        }
-        
-        // Initialize on load
-        window.addEventListener('load', init);
-    </script>
-</body>
-</html>
