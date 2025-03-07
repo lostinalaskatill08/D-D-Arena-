@@ -1,67 +1,4 @@
-// Create a simple house structure
-        function createStructure() {
-            const structureGroup = new THREE.Group();
-            
-            // House base (4 walls)
-            const baseGeometry = new THREE.BoxGeometry(1.2, 0.8, 1.2);
-            const baseMaterial = new THREE.MeshPhongMaterial({
-                color: 0x808080, // Gray
-                shininess: 20
-            });
-            
-            const base = new THREE.Mesh(baseGeometry, baseMaterial);
-            base.position.y = 0.4; // Half height
-            structureGroup.add(base);
-            
-            // Triangular roof
-            const roofGeometry = new THREE.ConeGeometry(0.9, 0.7, 4);
-            const roofMaterial = new THREE.MeshPhongMaterial({
-                color: 0x8B4513, // Brown
-                shininess: 10
-            });
-            
-            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
-            roof.position.y = 1.15; // Base height (0.8) + half roof height (0.35)
-            roof.rotation.y = Math.PI / 4; // Rotate to align square base with walls
-            structureGroup.add(roof);
-            
-            // Add a door
-            const doorGeometry = new THREE.PlaneGeometry(0.3, 0.5);
-            const doorMaterial = new THREE.MeshPhongMaterial({
-                color: 0x4d2600, // Dark brown
-                shininess: 30,
-                side: THREE.DoubleSide
-            });
-            
-            const door = new THREE.Mesh(doorGeometry, doorMaterial);
-            door.position.set(0, 0.25, 0.61); // Position at the front of house
-            structureGroup.add(door);
-            
-            // Add a window
-            const windowGeometry = new THREE.PlaneGeometry(0.2, 0.2);
-            const windowMaterial = new THREE.MeshPhongMaterial({
-                color: 0xadd8e6, // Light blue
-                shininess: 90,
-                side: THREE.DoubleSide
-            });
-            
-            // Add two windows
-            const window1 = new THREE.Mesh(windowGeometry, windowMaterial);
-            window1.position.set(-0.3, 0.5, 0.61); // Left window
-            structureGroup.add(window1);
-            
-            const window2 = new THREE.Mesh(windowGeometry, windowMaterial);
-            window2.position.set(0.3, 0.5, 0.61); // Right window
-            structureGroup.add(window2);
-            
-            // Scale to match character size
-            structureGroup.scale.set(1.5, 1.5, 1.5);
-            
-            return structureGroup;
-        }                <div class="legend-item">
-                    <div style="background-color: #808080;" class="legend-color"></div>
-                    <span>Structure</span>
-                </div><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -372,6 +309,10 @@
                 <div class="legend-item">
                     <div style="background-color: #800080;" class="legend-color"></div>
                     <span>Trap/Spell</span>
+                </div>
+                <div class="legend-item">
+                    <div style="background-color: #808080;" class="legend-color"></div>
+                    <span>Structure</span>
                 </div>
                 <div class="legend-item">
                     <div style="background-color: #ff9800;" class="legend-color"></div>
@@ -776,7 +717,7 @@
                     pieceObject = createHumanoidFigure(0x00008B, 3.0, true); // Dark blue, much larger
                     break;
                 case 'trap':
-                    pieceObject = createTrapSpell(); // Purple triangle for traps/spells
+                    pieceObject = createTrapSpell(); // Purple magical trap
                     break;
                 case 'structure':
                     pieceObject = createStructure(); // Gray house structure
@@ -789,6 +730,68 @@
             }
             
             return pieceObject;
+        }
+        
+        // Create a simple house structure
+        function createStructure() {
+            const structureGroup = new THREE.Group();
+            
+            // House base (4 walls)
+            const baseGeometry = new THREE.BoxGeometry(1.2, 0.8, 1.2);
+            const baseMaterial = new THREE.MeshPhongMaterial({
+                color: 0x808080, // Gray
+                shininess: 20
+            });
+            
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.y = 0.4; // Half height
+            structureGroup.add(base);
+            
+            // Triangular roof
+            const roofGeometry = new THREE.ConeGeometry(0.9, 0.7, 4);
+            const roofMaterial = new THREE.MeshPhongMaterial({
+                color: 0x8B4513, // Brown
+                shininess: 10
+            });
+            
+            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+            roof.position.y = 1.15; // Base height (0.8) + half roof height (0.35)
+            roof.rotation.y = Math.PI / 4; // Rotate to align square base with walls
+            structureGroup.add(roof);
+            
+            // Add a door
+            const doorGeometry = new THREE.PlaneGeometry(0.3, 0.5);
+            const doorMaterial = new THREE.MeshPhongMaterial({
+                color: 0x4d2600, // Dark brown
+                shininess: 30,
+                side: THREE.DoubleSide
+            });
+            
+            const door = new THREE.Mesh(doorGeometry, doorMaterial);
+            door.position.set(0, 0.25, 0.61); // Position at the front of house
+            structureGroup.add(door);
+            
+            // Add windows
+            const windowGeometry = new THREE.PlaneGeometry(0.2, 0.2);
+            const windowMaterial = new THREE.MeshPhongMaterial({
+                color: 0xadd8e6, // Light blue
+                shininess: 90,
+                side: THREE.DoubleSide
+            });
+            
+            // Add two windows
+            const window1 = new THREE.Mesh(windowGeometry, windowMaterial);
+            window1.position.set(-0.3, 0.5, 0.61); // Left window
+            structureGroup.add(window1);
+            
+            const window2 = new THREE.Mesh(windowGeometry, windowMaterial);
+            window2.position.set(0.3, 0.5, 0.61); // Right window
+            structureGroup.add(window2);
+            
+            // Scale to match character size
+            structureGroup.scale.set(1.5, 1.5, 1.5);
+            
+            return structureGroup;
         }
         
         // Create a humanoid figure for characters
@@ -1040,52 +1043,149 @@
             return waterGroup;
         }
         
-        // Create trap/spell (triangle)
+        // Create trap/spell (advanced magical effect)
         function createTrapSpell() {
-            // Create a triangle for traps/spells
             const trapGroup = new THREE.Group();
             
-            // Create a triangle (using cone geometry with 3 segments)
-            const triangleGeometry = new THREE.ConeGeometry(0.5, 0.6, 3);
-            const triangleMaterial = new THREE.MeshPhongMaterial({
-                color: 0x0000ff, // Blue
-                shininess: 50,
+            // Create a rune circle base
+            const baseGeometry = new THREE.CircleGeometry(0.5, 32);
+            const baseMaterial = new THREE.MeshPhongMaterial({
+                color: 0x800080, // Purple
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide,
+                emissive: 0x500050,
+                emissiveIntensity: 0.3
+            });
+            
+            const baseCircle = new THREE.Mesh(baseGeometry, baseMaterial);
+            baseCircle.rotation.x = -Math.PI / 2; // Lay flat
+            baseCircle.position.y = 0.01; // Just above ground
+            trapGroup.add(baseCircle);
+            
+            // Add inner rune circle
+            const innerCircleGeometry = new THREE.RingGeometry(0.2, 0.3, 32);
+            const innerCircleMaterial = new THREE.MeshPhongMaterial({
+                color: 0xb366ff, // Lighter purple
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide,
+                emissive: 0x9900ff,
+                emissiveIntensity: 0.4
+            });
+            
+            const innerCircle = new THREE.Mesh(innerCircleGeometry, innerCircleMaterial);
+            innerCircle.rotation.x = -Math.PI / 2; // Lay flat
+            innerCircle.position.y = 0.02; // Slightly above base
+            trapGroup.add(innerCircle);
+            
+            // Add rune symbols (simplified as small geometric shapes)
+            const runeColors = [0xff00ff, 0x9900ff, 0xcc00cc, 0x660066];
+            const runePositions = [
+                { x: 0.35, z: 0, scale: 0.08 },
+                { x: 0, z: 0.35, scale: 0.07 },
+                { x: -0.35, z: 0, scale: 0.08 },
+                { x: 0, z: -0.35, scale: 0.07 },
+                { x: 0.25, z: 0.25, scale: 0.06 },
+                { x: -0.25, z: 0.25, scale: 0.06 },
+                { x: -0.25, z: -0.25, scale: 0.06 },
+                { x: 0.25, z: -0.25, scale: 0.06 }
+            ];
+            
+            // Create different rune shapes
+            runePositions.forEach((pos, index) => {
+                let runeGeometry;
+                if (index % 3 === 0) {
+                    runeGeometry = new THREE.OctahedronGeometry(pos.scale);
+                } else if (index % 3 === 1) {
+                    runeGeometry = new THREE.TetrahedronGeometry(pos.scale);
+                } else {
+                    runeGeometry = new THREE.IcosahedronGeometry(pos.scale);
+                }
+                
+                const runeMaterial = new THREE.MeshPhongMaterial({
+                    color: runeColors[index % runeColors.length],
+                    emissive: runeColors[index % runeColors.length],
+                    emissiveIntensity: 0.5,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                
+                const rune = new THREE.Mesh(runeGeometry, runeMaterial);
+                rune.position.set(pos.x, 0.1, pos.z);
+                
+                // Add random rotation to each rune
+                rune.rotation.set(
+                    Math.random() * Math.PI * 2,
+                    Math.random() * Math.PI * 2,
+                    Math.random() * Math.PI * 2
+                );
+                
+                // Add to animation list for rotating
+                rune.userData.rotationSpeed = {
+                    x: (Math.random() - 0.5) * 0.02,
+                    y: (Math.random() - 0.5) * 0.02,
+                    z: (Math.random() - 0.5) * 0.02
+                };
+                
+                trapGroup.add(rune);
+            });
+            
+            // Add central magical effect
+            const coreGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+            const coreMaterial = new THREE.MeshPhongMaterial({
+                color: 0xff00ff, // Bright purple
+                emissive: 0xff00ff,
+                emissiveIntensity: 0.7,
                 transparent: true,
                 opacity: 0.8
             });
             
-            const triangle = new THREE.Mesh(triangleGeometry, triangleMaterial);
+            const core = new THREE.Mesh(coreGeometry, coreMaterial);
+            core.position.y = 0.25;
+            trapGroup.add(core);
             
-            // Rotate and position the triangle to lie flat
-            triangle.rotation.x = Math.PI;
-            triangle.position.y = 0.2;
-            
-            // Add some magical effect (small particles)
-            const particlesGeometry = new THREE.SphereGeometry(0.05, 8, 8);
-            const particlesMaterial = new THREE.MeshPhongMaterial({
-                color: 0xd896ff, // Light purple
-                emissive: 0xb366ff,
-                emissiveIntensity: 0.5,
-                transparent: true,
-                opacity: 0.7
-            });
-            
-            // Add 3 particles at each corner of the triangle
-            for (let i = 0; i < 3; i++) {
-                const angle = (i / 3) * Math.PI * 2;
-                const particle = new THREE.Mesh(particlesGeometry, particlesMaterial);
-                const radius = 0.3;
+            // Add energy particles around the core
+            for (let i = 0; i < 10; i++) {
+                const angle = (i / 10) * Math.PI * 2;
+                const radius = 0.25;
+                
+                const particleGeometry = new THREE.SphereGeometry(0.03 + Math.random() * 0.02, 8, 8);
+                const particleMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xd896ff, // Light purple
+                    emissive: 0xb366ff,
+                    emissiveIntensity: 0.6,
+                    transparent: true,
+                    opacity: 0.7 + Math.random() * 0.3
+                });
+                
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                
+                // Position in circle around core
                 particle.position.set(
                     Math.cos(angle) * radius,
-                    0.3,
+                    0.25 + (Math.random() - 0.5) * 0.2,
                     Math.sin(angle) * radius
                 );
+                
                 trapGroup.add(particle);
             }
             
-            trapGroup.add(triangle);
+            // Add misty effect
+            const mistGeometry = new THREE.PlaneGeometry(1.1, 1.1);
+            const mistMaterial = new THREE.MeshPhongMaterial({
+                color: 0x9900ff,
+                transparent: true,
+                opacity: 0.2,
+                side: THREE.DoubleSide
+            });
             
-            // Apply scale
+            const mist = new THREE.Mesh(mistGeometry, mistMaterial);
+            mist.rotation.x = -Math.PI / 2; // Lay flat
+            mist.position.y = 0.05;
+            trapGroup.add(mist);
+            
+            // Apply overall scale
             trapGroup.scale.set(1.2, 1.0, 1.2);
             
             return trapGroup;
@@ -1359,8 +1459,8 @@
                     selectedPiece.position.y = 0.05; // Water stays very low
                 } else if (pieceType === 'obstacle') {
                     selectedPiece.position.y = 0.3; // Obstacles at medium height
-                }                 else if (pieceType === 'trap') {
-                    selectedPiece.position.y = 0.4; // Traps at medium height for caltrops
+                } else if (pieceType === 'trap') {
+                    selectedPiece.position.y = 0.2; // Traps at moderate height
                 } else if (pieceType === 'structure') {
                     selectedPiece.position.y = 0; // Structure at ground level
                 } else {
@@ -1399,7 +1499,7 @@
                             } else if (pieceType === 'obstacle') {
                                 selectedPiece.position.y = 0.3;
                             } else if (pieceType === 'trap') {
-                                selectedPiece.position.y = 0.4;
+                                selectedPiece.position.y = 0.2;
                             } else if (pieceType === 'structure') {
                                 selectedPiece.position.y = 0;
                             }
@@ -1430,7 +1530,7 @@
                         } else if (pieceType === 'obstacle') {
                             selectedPiece.position.y = 0.3;
                         } else if (pieceType === 'trap') {
-                            selectedPiece.position.y = 0.1;
+                            selectedPiece.position.y = 0.2;
                         }
                     }
                 }
@@ -1479,8 +1579,8 @@
                     piece.position.set(pieceData.x + 0.5, 0.05, pieceData.z + 0.5);
                 } else if (pieceData.type === 'obstacle') {
                     piece.position.set(pieceData.x + 0.5, 0.3, pieceData.z + 0.5);
-                }                 else if (pieceData.type === 'trap') {
-                    piece.position.set(pieceData.x + 0.5, 0.4, pieceData.z + 0.5);
+                } else if (pieceData.type === 'trap') {
+                    piece.position.set(pieceData.x + 0.5, 0.2, pieceData.z + 0.5);
                 } else if (pieceData.type === 'structure') {
                     piece.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
                 } else {
@@ -1548,38 +1648,26 @@
             return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(z2 - z1, 2));
         }
         
-        // Reset the scene (called when board size changes)
-        function resetScene() {
-            // Remove renderer from container
-            if (renderer && renderer.domElement && renderer.domElement.parentNode) {
-                renderer.domElement.parentNode.removeChild(renderer.domElement);
-            }
-            
-            // Clear the scene
-            if (scene) {
-                while (scene.children.length > 0) {
-                    scene.remove(scene.children[0]);
-                }
-            }
-            
-            // Reset game state
-            // Keep the pieces when resetting
-            draggableMeshes = [];
-            shootingStars = [];
-            
-            // Recreate everything
-            init();
-            
-            // Restore pieces
-            updatePieces();
-        }
-        
         // Animation loop
         function animate() {
             requestAnimationFrame(animate);
             
             // Update shooting stars
             updateShootingStars(0.016); // Approximately 60fps
+            
+            // Animate trap/spell runes if any exist
+            draggableMeshes.forEach(piece => {
+                if (piece.userData.type === 'trap') {
+                    // Find all the rune symbols (children with rotation speed data)
+                    piece.children.forEach(child => {
+                        if (child.userData.rotationSpeed) {
+                            child.rotation.x += child.userData.rotationSpeed.x;
+                            child.rotation.y += child.userData.rotationSpeed.y;
+                            child.rotation.z += child.userData.rotationSpeed.z;
+                        }
+                    });
+                }
+            });
             
             renderer.render(scene, camera);
         }
