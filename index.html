@@ -1,4 +1,53 @@
-<!DOCTYPE html>
+// Create trap/spell (triangle)
+        function createTrapSpell() {
+            // Create a triangle for traps/spells
+            const trapGroup = new THREE.Group();
+            
+            // Create a triangle (using cone geometry with 3 segments)
+            const triangleGeometry = new THREE.ConeGeometry(0.5, 0.6, 3);
+            const triangleMaterial = new THREE.MeshPhongMaterial({
+                color: 0x00008B, // Dark blue
+                shininess: 50,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const triangle = new THREE.Mesh(triangleGeometry, triangleMaterial);
+            
+            // Rotate and position the triangle to lie flat
+            triangle.rotation.x = Math.PI;
+            triangle.position.y = 0.2;
+            
+            // Add some magical effect (small particles)
+            const particlesGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const particlesMaterial = new THREE.MeshPhongMaterial({
+                color: 0x00ffff, // Cyan
+                emissive: 0x00ffff,
+                emissiveIntensity: 0.5,
+                transparent: true,
+                opacity: 0.7
+            });
+            
+            // Add 3 particles at each corner of the triangle
+            for (let i = 0; i < 3; i++) {
+                const angle = (i / 3) * Math.PI * 2;
+                const particle = new THREE.Mesh(particlesGeometry, particlesMaterial);
+                const radius = 0.3;
+                particle.position.set(
+                    Math.cos(angle) * radius,
+                    0.3,
+                    Math.sin(angle) * radius
+                );
+                trapGroup.add(particle);
+            }
+            
+            trapGroup.add(triangle);
+            
+            // Apply scale
+            trapGroup.scale.set(1.2, 1.0, 1.2);
+            
+            return trapGroup;
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -241,7 +290,8 @@
                     <option value="enemy">Enemy (Red)</option>
                     <option value="obstacle">Obstacle (Brown)</option>
                     <option value="water">Water (Blue)</option>
-                    <option value="boss">Boss (Purple)</option>
+                    <option value="boss">Boss (Dark Blue)</option>
+                    <option value="trap">Trap/Spell (Dark Blue)</option>
                     <option value="npc">NPC (Orange)</option>
                 </select>
             </div>
@@ -302,8 +352,12 @@
                     <span>Water</span>
                 </div>
                 <div class="legend-item">
-                    <div style="background-color: #9c27b0;" class="legend-color"></div>
+                    <div style="background-color: #00008B;" class="legend-color"></div>
                     <span>Boss</span>
+                </div>
+                <div class="legend-item">
+                    <div style="background-color: #00008B;" class="legend-color"></div>
+                    <span>Trap/Spell</span>
                 </div>
                 <div class="legend-item">
                     <div style="background-color: #ff9800;" class="legend-color"></div>
@@ -695,10 +749,10 @@
             
             switch (type) {
                 case 'party':
-                    pieceObject = createHumanoidFigure(0x4caf50); // Green
+                    pieceObject = createHumanoidFigure(0x4caf50, 1.8, true); // Green
                     break;
                 case 'enemy':
-                    pieceObject = createHumanoidFigure(0xf44336); // Red
+                    pieceObject = createHumanoidFigure(0xf44336, 1.8, true); // Red
                     break;
                 case 'obstacle':
                     pieceObject = createObstacle(); // Brown rectangular obstacle
@@ -707,13 +761,16 @@
                     pieceObject = createWater(); // Blue shallow square for water
                     break;
                 case 'boss':
-                    pieceObject = createHumanoidFigure(0x9c27b0, 3.0); // Purple, much larger
+                    pieceObject = createHumanoidFigure(0x00008B, 3.0, true); // Dark blue, much larger
+                    break;
+                case 'trap':
+                    pieceObject = createTrapSpell(); // Dark blue triangle for traps/spells
                     break;
                 case 'npc':
-                    pieceObject = createHumanoidFigure(0xff9800); // Orange
+                    pieceObject = createHumanoidFigure(0xff9800, 1.8, true); // Orange
                     break;
                 default:
-                    pieceObject = createHumanoidFigure(0x4caf50); // Default to green
+                    pieceObject = createHumanoidFigure(0x4caf50, 1.8, true); // Default to green
             }
             
             return pieceObject;
@@ -1212,8 +1269,27 @@
             });
             draggableMeshes = [];
             
+            // Sort pieces by type to process enemies and party members last
+            // This helps with determining facing direction
+            const sortedPieces = [...pieces].sort((a, b) => {
+                // Process static objects first, then NPCs, then enemies and party members
+                const typeOrder = { 'obstacle': 1, 'water': 2, 'trap': 3, 'npc': 4, 'boss': 5, 'enemy': 6, 'party': 7 };
+                return typeOrder[a.type] - typeOrder[b.type];
+            });
+            
+            // Process static objects and collect party/enemy positions for facing calculations
+            const partyPositions = [];
+            const enemyPositions = [];
+            
             // Create new pieces from data
-            pieces.forEach(pieceData => {
+            sortedPieces.forEach(pieceData => {
+                // Collect positions for party and enemies
+                if (pieceData.type === 'party') {
+                    partyPositions.push({ x: pieceData.x, z: pieceData.z });
+                } else if (pieceData.type === 'enemy' || pieceData.type === 'boss') {
+                    enemyPositions.push({ x: pieceData.x, z: pieceData.z });
+                }
+                
                 const piece = createGamePiece(pieceData.type);
                 
                 // Position based on type
@@ -1221,8 +1297,35 @@
                     piece.position.set(pieceData.x + 0.5, 0.05, pieceData.z + 0.5);
                 } else if (pieceData.type === 'obstacle') {
                     piece.position.set(pieceData.x + 0.5, 0.3, pieceData.z + 0.5);
+                } else if (pieceData.type === 'trap') {
+                    piece.position.set(pieceData.x + 0.5, 0.1, pieceData.z + 0.5);
                 } else {
                     piece.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
+                    
+                    // For party/enemy/boss, determine facing direction
+                    if (pieceData.type === 'party' && enemyPositions.length > 0) {
+                        // Find closest enemy
+                        const closestEnemy = findClosestPosition(pieceData.x, pieceData.z, enemyPositions);
+                        if (closestEnemy) {
+                            // Calculate direction to face the enemy
+                            const angle = Math.atan2(
+                                closestEnemy.z - pieceData.z,
+                                closestEnemy.x - pieceData.x
+                            );
+                            piece.rotation.y = angle;
+                        }
+                    } else if ((pieceData.type === 'enemy' || pieceData.type === 'boss') && partyPositions.length > 0) {
+                        // Find closest party member
+                        const closestParty = findClosestPosition(pieceData.x, pieceData.z, partyPositions);
+                        if (closestParty) {
+                            // Calculate direction to face the party member
+                            const angle = Math.atan2(
+                                closestParty.z - pieceData.z,
+                                closestParty.x - pieceData.x
+                            );
+                            piece.rotation.y = angle;
+                        }
+                    }
                 }
                 
                 // Add piece metadata
@@ -1236,6 +1339,29 @@
                 scene.add(piece);
                 draggableMeshes.push(piece);
             });
+        }
+        
+        // Helper function to find the closest position
+        function findClosestPosition(x, z, positions) {
+            if (positions.length === 0) return null;
+            
+            let closestPos = positions[0];
+            let closestDist = calculateDistance(x, z, positions[0].x, positions[0].z);
+            
+            for (let i = 1; i < positions.length; i++) {
+                const dist = calculateDistance(x, z, positions[i].x, positions[i].z);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestPos = positions[i];
+                }
+            }
+            
+            return closestPos;
+        }
+        
+        // Helper function to calculate distance between two points
+        function calculateDistance(x1, z1, x2, z2) {
+            return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(z2 - z1, 2));
         }
         
         // Reset the scene (called when board size changes)
