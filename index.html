@@ -1300,12 +1300,38 @@
             return excludePieceId === null || occupiedPositions[posKey] !== excludePieceId;
         }
         
-        // Check if a position and its adjacents are occupied (for larger pieces like structures)
+        // Check for structure-to-structure minimum distance (2 squares)
         function checkStructureCollision(x, z, excludePieceId = null) {
-            // For structures, check the position itself and adjacent positions
+            // First, check if the position itself is occupied
             if (isPositionOccupied(x, z, excludePieceId)) return true;
             
-            // No collision detected
+            // For structure-to-structure distance, check if there are any other structures within 2 squares
+            for (let i = -2; i <= 2; i++) {
+                for (let j = -2; j <= 2; j++) {
+                    const checkX = x + i;
+                    const checkZ = z + j;
+                    
+                    // Skip if out of bounds
+                    if (checkX < 0 || checkX >= boardSize || checkZ < 0 || checkZ >= boardSize) continue;
+                    
+                    // Skip the center position (already checked above)
+                    if (i === 0 && j === 0) continue;
+                    
+                    const posKey = getPositionKey(checkX, checkZ);
+                    const pieceId = occupiedPositions[posKey];
+                    
+                    // Skip if position is not occupied or is occupied by the excluded piece
+                    if (!pieceId || pieceId === excludePieceId) continue;
+                    
+                    // Find the piece type at this position
+                    const foundPiece = pieces.find(p => p.id === pieceId);
+                    if (foundPiece && foundPiece.type === 'structure') {
+                        return true; // Found another structure within 2 squares
+                    }
+                }
+            }
+            
+            // No structure collision detected
             return false;
         }
         
@@ -1393,12 +1419,23 @@
                 const z = Math.floor(point.z);
                 
                 if (x >= 0 && x < boardSize && z >= 0 && z < boardSize) {
-                    // Check if position is already occupied
-                    const isOccupied = isPositionOccupied(x, z);
+                    // Check for any collisions based on piece type
+                    let collision = false;
                     
-                    if (isOccupied) {
-                        showErrorMessage("Position already occupied!");
-                        return;
+                    if (selectedPieceType === 'structure') {
+                        // For structures, check for structure-to-structure minimum distance
+                        collision = checkStructureCollision(x, z);
+                        if (collision) {
+                            showErrorMessage("Structures must be at least 2 squares apart!");
+                            return;
+                        }
+                    } else {
+                        // For other piece types, just check if position is occupied
+                        collision = isPositionOccupied(x, z);
+                        if (collision) {
+                            showErrorMessage("Position already occupied!");
+                            return;
+                        }
                     }
                     
                     // Add new piece
