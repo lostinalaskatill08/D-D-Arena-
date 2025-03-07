@@ -143,6 +143,7 @@
             background-color: #8B0000;
             color: #fff;
             border: 1px solid #440000;
+            user-select: none;
         }
         .rotation-btn:hover {
             background-color: #6d0101;
@@ -217,6 +218,7 @@
             background-color: #8B0000;
             color: #fff;
             border: 1px solid #440000;
+            user-select: none;
         }
         .zoom-btn:hover {
             background-color: #6d0101;
@@ -351,6 +353,9 @@
         let isDraggingBoard = false;
         let lastMousePosition = {x: 0, y: 0};
         
+        // Variables for continuous rotation
+        let rotationIntervals = {};
+        
         const boardContainer = document.getElementById('boardContainer');
         const positionsOutput = document.getElementById('positionsOutput');
         const copySuccess = document.getElementById('copySuccess');
@@ -428,39 +433,90 @@
             }
         });
         
-        // Zoom buttons
-        document.getElementById('zoomInBtn').addEventListener('click', function() {
-            zoomCamera(-5); // Zoom in
-        });
-        
-        document.getElementById('zoomOutBtn').addEventListener('click', function() {
-            zoomCamera(5); // Zoom out
-        });
-        
-        // Rotation button handlers
-        document.getElementById('rotateLeftBtn').addEventListener('click', function() {
-            rotateCamera('left');
-        });
-        
-        document.getElementById('rotateRightBtn').addEventListener('click', function() {
-            rotateCamera('right');
-        });
-        
-        document.getElementById('rotateUpBtn').addEventListener('click', function() {
-            rotateCamera('up');
-        });
-        
-        document.getElementById('rotateDownBtn').addEventListener('click', function() {
-            rotateCamera('down');
-        });
-        
-        document.getElementById('rotateLeftHorizontalBtn').addEventListener('click', function() {
-            rotateCamera('leftH');
-        });
-        
-        document.getElementById('rotateRightHorizontalBtn').addEventListener('click', function() {
-            rotateCamera('rightH');
-        });
+        // Continuous rotation and zoom control setup
+        function setupContinuousControls() {
+            // Setup continuous rotation controls
+            const rotationButtons = [
+                {id: 'rotateLeftBtn', direction: 'left'},
+                {id: 'rotateRightBtn', direction: 'right'},
+                {id: 'rotateUpBtn', direction: 'up'},
+                {id: 'rotateDownBtn', direction: 'down'},
+                {id: 'rotateLeftHorizontalBtn', direction: 'leftH'},
+                {id: 'rotateRightHorizontalBtn', direction: 'rightH'}
+            ];
+            
+            rotationButtons.forEach(button => {
+                const element = document.getElementById(button.id);
+                
+                element.addEventListener('mousedown', function() {
+                    // Clear any existing interval for this button
+                    if (rotationIntervals[button.id]) {
+                        clearInterval(rotationIntervals[button.id]);
+                    }
+                    
+                    // Immediately perform rotation
+                    rotateCamera(button.direction);
+                    
+                    // Set interval for continuous rotation
+                    rotationIntervals[button.id] = setInterval(function() {
+                        rotateCamera(button.direction);
+                    }, 100); // Repeat every 100ms
+                });
+                
+                element.addEventListener('mouseup', function() {
+                    if (rotationIntervals[button.id]) {
+                        clearInterval(rotationIntervals[button.id]);
+                        rotationIntervals[button.id] = null;
+                    }
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    if (rotationIntervals[button.id]) {
+                        clearInterval(rotationIntervals[button.id]);
+                        rotationIntervals[button.id] = null;
+                    }
+                });
+            });
+            
+            // Setup continuous zoom controls
+            const zoomButtons = [
+                {id: 'zoomInBtn', amount: -2}, // Zoom in (negative amount)
+                {id: 'zoomOutBtn', amount: 2}  // Zoom out (positive amount)
+            ];
+            
+            zoomButtons.forEach(button => {
+                const element = document.getElementById(button.id);
+                
+                element.addEventListener('mousedown', function() {
+                    // Clear any existing interval for this button
+                    if (rotationIntervals[button.id]) {
+                        clearInterval(rotationIntervals[button.id]);
+                    }
+                    
+                    // Immediately perform zoom
+                    zoomCamera(button.amount);
+                    
+                    // Set interval for continuous zoom
+                    rotationIntervals[button.id] = setInterval(function() {
+                        zoomCamera(button.amount);
+                    }, 100); // Repeat every 100ms
+                });
+                
+                element.addEventListener('mouseup', function() {
+                    if (rotationIntervals[button.id]) {
+                        clearInterval(rotationIntervals[button.id]);
+                        rotationIntervals[button.id] = null;
+                    }
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    if (rotationIntervals[button.id]) {
+                        clearInterval(rotationIntervals[button.id]);
+                        rotationIntervals[button.id] = null;
+                    }
+                });
+            });
+        }
         
         // JSON save/load functions
         function saveBattleToJson() {
@@ -581,6 +637,9 @@
             
             // Create game board
             createBoard();
+            
+            // Setup continuous controls
+            setupContinuousControls();
             
             // Handle window resize
             window.addEventListener('resize', onWindowResize);
@@ -1209,23 +1268,23 @@
             return trapGroup;
         }
         
-        // Create a 6x6 castle structure
+        // Create a 10x10 castle structure (larger version)
         function createCastle() {
             const castleGroup = new THREE.Group();
             
-            // Base/ground of castle
-            const baseGeometry = new THREE.BoxGeometry(6, 0.2, 6);
+            // Base/ground of castle (10x10)
+            const baseGeometry = new THREE.BoxGeometry(10, 0.3, 10);
             const baseMaterial = new THREE.MeshPhongMaterial({
                 color: 0x888888, // Gray stone
                 shininess: 10
             });
             const base = new THREE.Mesh(baseGeometry, baseMaterial);
-            base.position.y = 0.1; // Just above ground
+            base.position.y = 0.15; // Just above ground
             castleGroup.add(base);
             
             // Main castle walls
-            const wallHeight = 1.2;
-            const wallThickness = 0.4;
+            const wallHeight = 2.0;
+            const wallThickness = 0.5;
             
             // Create wall segments (four sides)
             const wallMaterial = new THREE.MeshPhongMaterial({
@@ -1234,33 +1293,33 @@
             });
             
             // North wall
-            const northWallGeometry = new THREE.BoxGeometry(6, wallHeight, wallThickness);
+            const northWallGeometry = new THREE.BoxGeometry(10, wallHeight, wallThickness);
             const northWall = new THREE.Mesh(northWallGeometry, wallMaterial);
-            northWall.position.set(0, wallHeight/2 + 0.2, -3 + wallThickness/2);
+            northWall.position.set(0, wallHeight/2 + 0.3, -5 + wallThickness/2);
             castleGroup.add(northWall);
             
             // South wall
-            const southWallGeometry = new THREE.BoxGeometry(6, wallHeight, wallThickness);
+            const southWallGeometry = new THREE.BoxGeometry(10, wallHeight, wallThickness);
             const southWall = new THREE.Mesh(southWallGeometry, wallMaterial);
-            southWall.position.set(0, wallHeight/2 + 0.2, 3 - wallThickness/2);
+            southWall.position.set(0, wallHeight/2 + 0.3, 5 - wallThickness/2);
             castleGroup.add(southWall);
             
             // East wall
-            const eastWallGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, 6 - wallThickness*2);
+            const eastWallGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, 10 - wallThickness*2);
             const eastWall = new THREE.Mesh(eastWallGeometry, wallMaterial);
-            eastWall.position.set(3 - wallThickness/2, wallHeight/2 + 0.2, 0);
+            eastWall.position.set(5 - wallThickness/2, wallHeight/2 + 0.3, 0);
             castleGroup.add(eastWall);
             
             // West wall
-            const westWallGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, 6 - wallThickness*2);
+            const westWallGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, 10 - wallThickness*2);
             const westWall = new THREE.Mesh(westWallGeometry, wallMaterial);
-            westWall.position.set(-3 + wallThickness/2, wallHeight/2 + 0.2, 0);
+            westWall.position.set(-5 + wallThickness/2, wallHeight/2 + 0.3, 0);
             castleGroup.add(westWall);
             
             // Corner towers (four corners)
-            const towerRadius = 0.6;
-            const towerHeight = 1.8;
-            const towerGeometry = new THREE.CylinderGeometry(towerRadius, towerRadius, towerHeight, 8);
+            const towerRadius = 1.0;
+            const towerHeight = 3.0;
+            const towerGeometry = new THREE.CylinderGeometry(towerRadius, towerRadius * 1.1, towerHeight, 8);
             const towerMaterial = new THREE.MeshPhongMaterial({
                 color: 0x696969, // Match wall color
                 shininess: 20
@@ -1268,26 +1327,26 @@
             
             // Northwest tower
             const nwTower = new THREE.Mesh(towerGeometry, towerMaterial);
-            nwTower.position.set(-3 + towerRadius, towerHeight/2 + 0.2, -3 + towerRadius);
+            nwTower.position.set(-5 + towerRadius, towerHeight/2 + 0.3, -5 + towerRadius);
             castleGroup.add(nwTower);
             
             // Northeast tower
             const neTower = new THREE.Mesh(towerGeometry, towerMaterial);
-            neTower.position.set(3 - towerRadius, towerHeight/2 + 0.2, -3 + towerRadius);
+            neTower.position.set(5 - towerRadius, towerHeight/2 + 0.3, -5 + towerRadius);
             castleGroup.add(neTower);
             
             // Southeast tower
             const seTower = new THREE.Mesh(towerGeometry, towerMaterial);
-            seTower.position.set(3 - towerRadius, towerHeight/2 + 0.2, 3 - towerRadius);
+            seTower.position.set(5 - towerRadius, towerHeight/2 + 0.3, 5 - towerRadius);
             castleGroup.add(seTower);
             
             // Southwest tower
             const swTower = new THREE.Mesh(towerGeometry, towerMaterial);
-            swTower.position.set(-3 + towerRadius, towerHeight/2 + 0.2, 3 - towerRadius);
+            swTower.position.set(-5 + towerRadius, towerHeight/2 + 0.3, 5 - towerRadius);
             castleGroup.add(swTower);
             
             // Tower conical roofs
-            const roofGeometry = new THREE.ConeGeometry(towerRadius + 0.1, 0.8, 8);
+            const roofGeometry = new THREE.ConeGeometry(towerRadius + 0.1, 1.5, 8);
             const roofMaterial = new THREE.MeshPhongMaterial({
                 color: 0x8B0000, // Red/brown roof
                 shininess: 30
@@ -1295,24 +1354,24 @@
             
             // Add roofs to all towers
             const nwRoof = new THREE.Mesh(roofGeometry, roofMaterial);
-            nwRoof.position.set(-3 + towerRadius, towerHeight + 0.6, -3 + towerRadius);
+            nwRoof.position.set(-5 + towerRadius, towerHeight + 1.05, -5 + towerRadius);
             castleGroup.add(nwRoof);
             
             const neRoof = new THREE.Mesh(roofGeometry, roofMaterial);
-            neRoof.position.set(3 - towerRadius, towerHeight + 0.6, -3 + towerRadius);
+            neRoof.position.set(5 - towerRadius, towerHeight + 1.05, -5 + towerRadius);
             castleGroup.add(neRoof);
             
             const seRoof = new THREE.Mesh(roofGeometry, roofMaterial);
-            seRoof.position.set(3 - towerRadius, towerHeight + 0.6, 3 - towerRadius);
+            seRoof.position.set(5 - towerRadius, towerHeight + 1.05, 5 - towerRadius);
             castleGroup.add(seRoof);
             
             const swRoof = new THREE.Mesh(roofGeometry, roofMaterial);
-            swRoof.position.set(-3 + towerRadius, towerHeight + 0.6, 3 - towerRadius);
+            swRoof.position.set(-5 + towerRadius, towerHeight + 1.05, 5 - towerRadius);
             castleGroup.add(swRoof);
             
             // Add a gate (in the south wall)
-            const gateWidth = 1.0;
-            const gateHeight = 0.8;
+            const gateWidth = 1.5;
+            const gateHeight = 1.4;
             const gateDepth = wallThickness + 0.05; // Slightly deeper than wall
             const gateGeometry = new THREE.BoxGeometry(gateWidth, gateHeight, gateDepth);
             const gateMaterial = new THREE.MeshPhongMaterial({
@@ -1320,31 +1379,40 @@
                 shininess: 30
             });
             const gate = new THREE.Mesh(gateGeometry, gateMaterial);
-            gate.position.set(0, gateHeight/2 + 0.2, 3 - wallThickness/2);
+            gate.position.set(0, gateHeight/2 + 0.3, 5 - wallThickness/2);
             castleGroup.add(gate);
             
+            // Add gatehouse over the main gate
+            const gatehouseWidth = 2.0;
+            const gatehouseHeight = 0.8;
+            const gatehouseDepth = 1.0;
+            const gatehouseGeometry = new THREE.BoxGeometry(gatehouseWidth, gatehouseHeight, gatehouseDepth);
+            const gatehouse = new THREE.Mesh(gatehouseGeometry, wallMaterial);
+            gatehouse.position.set(0, wallHeight + gatehouseHeight/2, 5 - gatehouseDepth/2);
+            castleGroup.add(gatehouse);
+            
             // Add a keep in the center
-            const keepWidth = 2.0;
-            const keepDepth = 2.0;
-            const keepHeight = 2.5;
+            const keepWidth = 4.0;
+            const keepDepth = 4.0;
+            const keepHeight = 4.0;
             const keepGeometry = new THREE.BoxGeometry(keepWidth, keepHeight, keepDepth);
             const keepMaterial = new THREE.MeshPhongMaterial({
                 color: 0x808080, // Gray stone
                 shininess: 20
             });
             const keep = new THREE.Mesh(keepGeometry, keepMaterial);
-            keep.position.set(0, keepHeight/2 + 0.2, 0);
+            keep.position.set(0, keepHeight/2 + 0.3, 0);
             castleGroup.add(keep);
             
             // Add a roof to the keep
-            const keepRoofGeometry = new THREE.ConeGeometry(Math.sqrt(keepWidth*keepWidth + keepDepth*keepDepth)/2, 1.2, 4);
+            const keepRoofGeometry = new THREE.ConeGeometry(Math.sqrt(keepWidth*keepWidth + keepDepth*keepDepth)/2, 2.0, 4);
             const keepRoof = new THREE.Mesh(keepRoofGeometry, roofMaterial);
-            keepRoof.position.set(0, keepHeight + 0.8, 0);
+            keepRoof.position.set(0, keepHeight + 1.3, 0);
             keepRoof.rotation.y = Math.PI/4; // Rotate 45 degrees
             castleGroup.add(keepRoof);
             
-            // Add some windows to keep
-            const windowGeometry = new THREE.PlaneGeometry(0.2, 0.3);
+            // Add some windows to keep (multiple sides)
+            const windowGeometry = new THREE.PlaneGeometry(0.4, 0.6);
             const windowMaterial = new THREE.MeshPhongMaterial({
                 color: 0xadd8e6, // Light blue
                 shininess: 50,
@@ -1353,63 +1421,73 @@
             
             // Add windows to keep (multiple sides)
             const keepWindow1 = new THREE.Mesh(windowGeometry, windowMaterial);
-            keepWindow1.position.set(0, keepHeight/2 + 0.2, keepDepth/2 + 0.01);
+            keepWindow1.position.set(0, keepHeight/2 + 0.3, keepDepth/2 + 0.01);
             castleGroup.add(keepWindow1);
             
             const keepWindow2 = new THREE.Mesh(windowGeometry, windowMaterial);
-            keepWindow2.position.set(keepWidth/2 + 0.01, keepHeight/2 + 0.2, 0);
+            keepWindow2.position.set(keepWidth/2 + 0.01, keepHeight/2 + 0.3, 0);
             keepWindow2.rotation.y = Math.PI/2;
             castleGroup.add(keepWindow2);
             
+            const keepWindow3 = new THREE.Mesh(windowGeometry, windowMaterial);
+            keepWindow3.position.set(0, keepHeight/2 + 0.3, -keepDepth/2 - 0.01);
+            keepWindow3.rotation.y = Math.PI;
+            castleGroup.add(keepWindow3);
+            
+            const keepWindow4 = new THREE.Mesh(windowGeometry, windowMaterial);
+            keepWindow4.position.set(-keepWidth/2 - 0.01, keepHeight/2 + 0.3, 0);
+            keepWindow4.rotation.y = -Math.PI/2;
+            castleGroup.add(keepWindow4);
+            
             // Add wall crenellations
-            const crenellationHeight = 0.25;
-            const crenellationWidth = 0.25;
+            const crenellationHeight = 0.4;
+            const crenellationWidth = 0.4;
             const crenellationMaterial = wallMaterial;
             
             // Add crenellations to north wall
-            for (let x = -2.75; x <= 2.75; x += 0.5) {
-                if (Math.abs(x) % 1 < 0.1) continue; // Skip some for gaps
+            for (let x = -4.75; x <= 4.75; x += 0.8) {
+                if (Math.abs(x) % 1.6 < 0.2) continue; // Skip some for gaps
                 const crenGeometry = new THREE.BoxGeometry(crenellationWidth, crenellationHeight, wallThickness);
                 const crenellation = new THREE.Mesh(crenGeometry, crenellationMaterial);
-                crenellation.position.set(x, wallHeight + crenellationHeight/2 + 0.2, -3 + wallThickness/2);
+                crenellation.position.set(x, wallHeight + crenellationHeight/2 + 0.3, -5 + wallThickness/2);
                 castleGroup.add(crenellation);
             }
             
-            // Add crenellations to south wall
-            for (let x = -2.75; x <= 2.75; x += 0.5) {
-                if (Math.abs(x) < 0.6) continue; // Skip center for gate
+            // Add crenellations to south wall (except gate area)
+            for (let x = -4.75; x <= 4.75; x += 0.8) {
+                if (Math.abs(x) < 1.0) continue; // Skip center for gate
                 const crenGeometry = new THREE.BoxGeometry(crenellationWidth, crenellationHeight, wallThickness);
                 const crenellation = new THREE.Mesh(crenGeometry, crenellationMaterial);
-                crenellation.position.set(x, wallHeight + crenellationHeight/2 + 0.2, 3 - wallThickness/2);
+                crenellation.position.set(x, wallHeight + crenellationHeight/2 + 0.3, 5 - wallThickness/2);
                 castleGroup.add(crenellation);
             }
             
             // Add crenellations to east wall
-            for (let z = -2.75; z <= 2.75; z += 0.5) {
-                if (Math.abs(z) % 1 < 0.1) continue; // Skip some for gaps
+            for (let z = -4.75; z <= 4.75; z += 0.8) {
+                if (Math.abs(z) % 1.6 < 0.2) continue; // Skip some for gaps
                 const crenGeometry = new THREE.BoxGeometry(wallThickness, crenellationHeight, crenellationWidth);
                 const crenellation = new THREE.Mesh(crenGeometry, crenellationMaterial);
-                crenellation.position.set(3 - wallThickness/2, wallHeight + crenellationHeight/2 + 0.2, z);
+                crenellation.position.set(5 - wallThickness/2, wallHeight + crenellationHeight/2 + 0.3, z);
                 castleGroup.add(crenellation);
             }
             
             // Add crenellations to west wall
-            for (let z = -2.75; z <= 2.75; z += 0.5) {
-                if (Math.abs(z) % 1 < 0.1) continue; // Skip some for gaps
+            for (let z = -4.75; z <= 4.75; z += 0.8) {
+                if (Math.abs(z) % 1.6 < 0.2) continue; // Skip some for gaps
                 const crenGeometry = new THREE.BoxGeometry(wallThickness, crenellationHeight, crenellationWidth);
                 const crenellation = new THREE.Mesh(crenGeometry, crenellationMaterial);
-                crenellation.position.set(-3 + wallThickness/2, wallHeight + crenellationHeight/2 + 0.2, z);
+                crenellation.position.set(-5 + wallThickness/2, wallHeight + crenellationHeight/2 + 0.3, z);
                 castleGroup.add(crenellation);
             }
             
             // Add flags on top of towers
-            const flagpoleGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.8, 8);
+            const flagpoleGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.2, 8);
             const flagpoleMaterial = new THREE.MeshPhongMaterial({
                 color: 0xa9a9a9, // Silver
                 shininess: 80
             });
             
-            const flagGeometry = new THREE.PlaneGeometry(0.3, 0.2);
+            const flagGeometry = new THREE.PlaneGeometry(0.6, 0.4);
             const flagMaterial = new THREE.MeshPhongMaterial({
                 color: 0xff0000, // Red flag
                 shininess: 30,
@@ -1418,15 +1496,51 @@
             
             // Add flag to northeast tower
             const neFlagpole = new THREE.Mesh(flagpoleGeometry, flagpoleMaterial);
-            neFlagpole.position.set(3 - towerRadius, towerHeight + 1.0, -3 + towerRadius);
+            neFlagpole.position.set(5 - towerRadius, towerHeight + 2.0, -5 + towerRadius);
             castleGroup.add(neFlagpole);
             
             const neFlag = new THREE.Mesh(flagGeometry, flagMaterial);
-            neFlag.position.set(3 - towerRadius + 0.15, towerHeight + 1.1, -3 + towerRadius);
+            neFlag.position.set(5 - towerRadius + 0.3, towerHeight + 2.2, -5 + towerRadius);
             castleGroup.add(neFlag);
             
-            // Scale to match game board
-            castleGroup.scale.set(0.5, 0.5, 0.5);
+            // Add second flag on another tower
+            const swFlagpole = new THREE.Mesh(flagpoleGeometry, flagpoleMaterial);
+            swFlagpole.position.set(-5 + towerRadius, towerHeight + 2.0, 5 - towerRadius);
+            castleGroup.add(swFlagpole);
+            
+            const swFlag = new THREE.Mesh(flagGeometry, flagMaterial);
+            swFlag.position.set(-5 + towerRadius - 0.3, towerHeight + 2.2, 5 - towerRadius);
+            swFlag.rotation.y = Math.PI; // Rotate flag
+            castleGroup.add(swFlag);
+            
+            // Add some inner buildings
+            const smallBuildingGeometry = new THREE.BoxGeometry(1.5, 1.2, 1.5);
+            const smallBuildingMaterial = new THREE.MeshPhongMaterial({
+                color: 0x8B4513, // Brown
+                shininess: 20
+            });
+            
+            const smallBuilding1 = new THREE.Mesh(smallBuildingGeometry, smallBuildingMaterial);
+            smallBuilding1.position.set(-2.5, 0.6 + 0.3, -2);
+            castleGroup.add(smallBuilding1);
+            
+            const smallBuildingRoofGeometry = new THREE.ConeGeometry(1.2, 0.8, 4);
+            const smallBuildingRoof1 = new THREE.Mesh(smallBuildingRoofGeometry, roofMaterial);
+            smallBuildingRoof1.position.set(-2.5, 1.6 + 0.3, -2);
+            smallBuildingRoof1.rotation.y = Math.PI/4;
+            castleGroup.add(smallBuildingRoof1);
+            
+            const smallBuilding2 = new THREE.Mesh(smallBuildingGeometry, smallBuildingMaterial);
+            smallBuilding2.position.set(2.5, 0.6 + 0.3, 2);
+            castleGroup.add(smallBuilding2);
+            
+            const smallBuildingRoof2 = new THREE.Mesh(smallBuildingRoofGeometry, roofMaterial);
+            smallBuildingRoof2.position.set(2.5, 1.6 + 0.3, 2);
+            smallBuildingRoof2.rotation.y = Math.PI/4;
+            castleGroup.add(smallBuildingRoof2);
+            
+            // Scale the castle appropriately (reduced scale factor to fit 10x10 grid better)
+            castleGroup.scale.set(0.65, 0.65, 0.65);
             
             return castleGroup;
         }
@@ -1985,6 +2099,10 @@
                             selectedPiece.position.y = 0.3;
                         } else if (pieceType === 'trap') {
                             selectedPiece.position.y = 0.2;
+                        } else if (pieceType === 'structure' || pieceType === 'merchant') {
+                            selectedPiece.position.y = 0;
+                        } else if (pieceType === 'castle') {
+                            selectedPiece.position.y = 0;
                         }
                     }
                 }
