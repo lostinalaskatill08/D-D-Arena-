@@ -1,4 +1,67 @@
-<!DOCTYPE html>
+// Create a simple house structure
+        function createStructure() {
+            const structureGroup = new THREE.Group();
+            
+            // House base (4 walls)
+            const baseGeometry = new THREE.BoxGeometry(1.2, 0.8, 1.2);
+            const baseMaterial = new THREE.MeshPhongMaterial({
+                color: 0x808080, // Gray
+                shininess: 20
+            });
+            
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.y = 0.4; // Half height
+            structureGroup.add(base);
+            
+            // Triangular roof
+            const roofGeometry = new THREE.ConeGeometry(0.9, 0.7, 4);
+            const roofMaterial = new THREE.MeshPhongMaterial({
+                color: 0x8B4513, // Brown
+                shininess: 10
+            });
+            
+            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+            roof.position.y = 1.15; // Base height (0.8) + half roof height (0.35)
+            roof.rotation.y = Math.PI / 4; // Rotate to align square base with walls
+            structureGroup.add(roof);
+            
+            // Add a door
+            const doorGeometry = new THREE.PlaneGeometry(0.3, 0.5);
+            const doorMaterial = new THREE.MeshPhongMaterial({
+                color: 0x4d2600, // Dark brown
+                shininess: 30,
+                side: THREE.DoubleSide
+            });
+            
+            const door = new THREE.Mesh(doorGeometry, doorMaterial);
+            door.position.set(0, 0.25, 0.61); // Position at the front of house
+            structureGroup.add(door);
+            
+            // Add a window
+            const windowGeometry = new THREE.PlaneGeometry(0.2, 0.2);
+            const windowMaterial = new THREE.MeshPhongMaterial({
+                color: 0xadd8e6, // Light blue
+                shininess: 90,
+                side: THREE.DoubleSide
+            });
+            
+            // Add two windows
+            const window1 = new THREE.Mesh(windowGeometry, windowMaterial);
+            window1.position.set(-0.3, 0.5, 0.61); // Left window
+            structureGroup.add(window1);
+            
+            const window2 = new THREE.Mesh(windowGeometry, windowMaterial);
+            window2.position.set(0.3, 0.5, 0.61); // Right window
+            structureGroup.add(window2);
+            
+            // Scale to match character size
+            structureGroup.scale.set(1.5, 1.5, 1.5);
+            
+            return structureGroup;
+        }                <div class="legend-item">
+                    <div style="background-color: #808080;" class="legend-color"></div>
+                    <span>Structure</span>
+                </div><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -239,10 +302,11 @@
                 <select id="pieceTypeSelect">
                     <option value="party">Party Member (Green)</option>
                     <option value="enemy">Enemy (Red)</option>
-                    <option value="obstacle">Obstacle (Brown)</option>
+                    <option value="obstacle">Obstacle/Wall (Brown)</option>
                     <option value="water">Water (Blue)</option>
                     <option value="boss">Boss (Dark Blue)</option>
                     <option value="trap">Trap/Spell (Purple)</option>
+                    <option value="structure">Structure (Gray)</option>
                     <option value="npc">NPC (Orange)</option>
                 </select>
             </div>
@@ -295,7 +359,7 @@
                 </div>
                 <div class="legend-item">
                     <div class="legend-color obstacle-color"></div>
-                    <span>Obstacle</span>
+                    <span>Obstacle/Wall</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color water-color"></div>
@@ -712,7 +776,10 @@
                     pieceObject = createHumanoidFigure(0x00008B, 3.0, true); // Dark blue, much larger
                     break;
                 case 'trap':
-                    pieceObject = createTrapSpell(); // Blue triangle for traps/spells
+                    pieceObject = createTrapSpell(); // Purple triangle for traps/spells
+                    break;
+                case 'structure':
+                    pieceObject = createStructure(); // Gray house structure
                     break;
                 case 'npc':
                     pieceObject = createHumanoidFigure(0xff9800, 1.8, true); // Orange
@@ -1292,8 +1359,10 @@
                     selectedPiece.position.y = 0.05; // Water stays very low
                 } else if (pieceType === 'obstacle') {
                     selectedPiece.position.y = 0.3; // Obstacles at medium height
-                } else if (pieceType === 'trap') {
-                    selectedPiece.position.y = 0.1; // Traps at low height
+                }                 else if (pieceType === 'trap') {
+                    selectedPiece.position.y = 0.4; // Traps at medium height for caltrops
+                } else if (pieceType === 'structure') {
+                    selectedPiece.position.y = 0; // Structure at ground level
                 } else {
                     selectedPiece.position.y = 0; // Characters at ground level
                 }
@@ -1330,7 +1399,9 @@
                             } else if (pieceType === 'obstacle') {
                                 selectedPiece.position.y = 0.3;
                             } else if (pieceType === 'trap') {
-                                selectedPiece.position.y = 0.1;
+                                selectedPiece.position.y = 0.4;
+                            } else if (pieceType === 'structure') {
+                                selectedPiece.position.y = 0;
                             }
                         } else {
                             // Remove from old position
@@ -1382,7 +1453,7 @@
             // This helps with determining facing direction
             const sortedPieces = [...pieces].sort((a, b) => {
                 // Process static objects first, then NPCs, then enemies and party members
-                const typeOrder = { 'obstacle': 1, 'water': 2, 'trap': 3, 'npc': 4, 'boss': 5, 'enemy': 6, 'party': 7 };
+                const typeOrder = { 'obstacle': 1, 'water': 2, 'trap': 3, 'structure': 4, 'npc': 5, 'boss': 6, 'enemy': 7, 'party': 8 };
                 return (typeOrder[a.type] || 0) - (typeOrder[b.type] || 0);
             });
             
@@ -1408,8 +1479,10 @@
                     piece.position.set(pieceData.x + 0.5, 0.05, pieceData.z + 0.5);
                 } else if (pieceData.type === 'obstacle') {
                     piece.position.set(pieceData.x + 0.5, 0.3, pieceData.z + 0.5);
-                } else if (pieceData.type === 'trap') {
-                    piece.position.set(pieceData.x + 0.5, 0.1, pieceData.z + 0.5);
+                }                 else if (pieceData.type === 'trap') {
+                    piece.position.set(pieceData.x + 0.5, 0.4, pieceData.z + 0.5);
+                } else if (pieceData.type === 'structure') {
+                    piece.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
                 } else {
                     piece.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
                     
