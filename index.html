@@ -1300,6 +1300,15 @@
             return excludePieceId === null || occupiedPositions[posKey] !== excludePieceId;
         }
         
+        // Check if a position and its adjacents are occupied (for larger pieces like structures)
+        function checkStructureCollision(x, z, excludePieceId = null) {
+            // For structures, check the position itself and adjacent positions
+            if (isPositionOccupied(x, z, excludePieceId)) return true;
+            
+            // No collision detected
+            return false;
+        }
+        
         // Handle mouse down
         function onMouseDown(event) {
             // Calculate mouse position
@@ -1385,7 +1394,9 @@
                 
                 if (x >= 0 && x < boardSize && z >= 0 && z < boardSize) {
                     // Check if position is already occupied
-                    if (isPositionOccupied(x, z)) {
+                    const isOccupied = isPositionOccupied(x, z);
+                    
+                    if (isOccupied) {
                         showErrorMessage("Position already occupied!");
                         return;
                     }
@@ -1563,7 +1574,7 @@
             
             // First pass: collect positions
             sortedPieces.forEach(pieceData => {
-                if (pieceData.type === 'party') {
+                if (pieceData.type === 'party' || pieceData.type === 'npc') {
                     partyPositions.push({ x: pieceData.x, z: pieceData.z });
                 } else if (pieceData.type === 'enemy' || pieceData.type === 'boss') {
                     enemyPositions.push({ x: pieceData.x, z: pieceData.z });
@@ -1586,12 +1597,11 @@
                 } else {
                     piece.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
                     
-                    // For party/enemy/boss, determine facing direction
-                    if (pieceData.type === 'party' && enemyPositions.length > 0) {
-                        // Find closest enemy
+                    // Updated facing logic to ensure combat-appropriate facing
+                    if ((pieceData.type === 'party' || pieceData.type === 'npc') && enemyPositions.length > 0) {
+                        // Party members and NPCs face enemies/bosses
                         const closestEnemy = findClosestPosition(pieceData.x, pieceData.z, enemyPositions);
                         if (closestEnemy) {
-                            // Calculate direction to face the enemy
                             const angle = Math.atan2(
                                 closestEnemy.z - pieceData.z,
                                 closestEnemy.x - pieceData.x
@@ -1599,10 +1609,9 @@
                             piece.rotation.y = angle;
                         }
                     } else if ((pieceData.type === 'enemy' || pieceData.type === 'boss') && partyPositions.length > 0) {
-                        // Find closest party member
+                        // Enemies and bosses face party members and NPCs
                         const closestParty = findClosestPosition(pieceData.x, pieceData.z, partyPositions);
                         if (closestParty) {
-                            // Calculate direction to face the party member
                             const angle = Math.atan2(
                                 closestParty.z - pieceData.z,
                                 closestParty.x - pieceData.x
