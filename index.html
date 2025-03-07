@@ -1609,12 +1609,22 @@
             const partyPositions = [];
             const enemyPositions = [];
             
-            // First pass: collect positions
+            // First pass: collect positions with additional data
             sortedPieces.forEach(pieceData => {
                 if (pieceData.type === 'party' || pieceData.type === 'npc') {
-                    partyPositions.push({ x: pieceData.x, z: pieceData.z });
+                    partyPositions.push({ 
+                        id: pieceData.id, 
+                        type: pieceData.type, 
+                        x: pieceData.x, 
+                        z: pieceData.z 
+                    });
                 } else if (pieceData.type === 'enemy' || pieceData.type === 'boss') {
-                    enemyPositions.push({ x: pieceData.x, z: pieceData.z });
+                    enemyPositions.push({ 
+                        id: pieceData.id, 
+                        type: pieceData.type, 
+                        x: pieceData.x, 
+                        z: pieceData.z 
+                    });
                 }
             });
             
@@ -1634,24 +1644,56 @@
                 } else {
                     piece.position.set(pieceData.x + 0.5, 0, pieceData.z + 0.5);
                     
-                    // Updated facing logic to ensure combat-appropriate facing
+                    // Enhanced facing logic with threat proximity detection
                     if ((pieceData.type === 'party' || pieceData.type === 'npc') && enemyPositions.length > 0) {
                         // Party members and NPCs face enemies/bosses
-                        const closestEnemy = findClosestPosition(pieceData.x, pieceData.z, enemyPositions);
-                        if (closestEnemy) {
+                        const threats = [];
+                        
+                        // First check for threats within 5 squares
+                        for (const enemy of enemyPositions) {
+                            const distance = calculateDistance(pieceData.x, pieceData.z, enemy.x, enemy.z);
+                            threats.push({
+                                position: enemy,
+                                distance: distance
+                            });
+                        }
+                        
+                        // Sort threats by distance
+                        threats.sort((a, b) => a.distance - b.distance);
+                        
+                        // Find closest threat within 5 squares if available, otherwise use the closest threat overall
+                        const closestThreat = threats.find(threat => threat.distance <= 5) || threats[0];
+                        
+                        if (closestThreat) {
                             const angle = Math.atan2(
-                                closestEnemy.z - pieceData.z,
-                                closestEnemy.x - pieceData.x
+                                closestThreat.position.z - pieceData.z,
+                                closestThreat.position.x - pieceData.x
                             );
                             piece.rotation.y = angle;
                         }
                     } else if ((pieceData.type === 'enemy' || pieceData.type === 'boss') && partyPositions.length > 0) {
                         // Enemies and bosses face party members and NPCs
-                        const closestParty = findClosestPosition(pieceData.x, pieceData.z, partyPositions);
-                        if (closestParty) {
+                        const threats = [];
+                        
+                        // First check for threats within 5 squares
+                        for (const ally of partyPositions) {
+                            const distance = calculateDistance(pieceData.x, pieceData.z, ally.x, ally.z);
+                            threats.push({
+                                position: ally,
+                                distance: distance
+                            });
+                        }
+                        
+                        // Sort threats by distance
+                        threats.sort((a, b) => a.distance - b.distance);
+                        
+                        // Find closest threat within 5 squares if available, otherwise use the closest threat overall
+                        const closestThreat = threats.find(threat => threat.distance <= 5) || threats[0];
+                        
+                        if (closestThreat) {
                             const angle = Math.atan2(
-                                closestParty.z - pieceData.z,
-                                closestParty.x - pieceData.x
+                                closestThreat.position.z - pieceData.z,
+                                closestThreat.position.x - pieceData.x
                             );
                             piece.rotation.y = angle;
                         }
