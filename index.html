@@ -1,53 +1,4 @@
-// Create trap/spell (triangle)
-        function createTrapSpell() {
-            // Create a triangle for traps/spells
-            const trapGroup = new THREE.Group();
-            
-            // Create a triangle (using cone geometry with 3 segments)
-            const triangleGeometry = new THREE.ConeGeometry(0.5, 0.6, 3);
-            const triangleMaterial = new THREE.MeshPhongMaterial({
-                color: 0x00008B, // Dark blue
-                shininess: 50,
-                transparent: true,
-                opacity: 0.8
-            });
-            
-            const triangle = new THREE.Mesh(triangleGeometry, triangleMaterial);
-            
-            // Rotate and position the triangle to lie flat
-            triangle.rotation.x = Math.PI;
-            triangle.position.y = 0.2;
-            
-            // Add some magical effect (small particles)
-            const particlesGeometry = new THREE.SphereGeometry(0.05, 8, 8);
-            const particlesMaterial = new THREE.MeshPhongMaterial({
-                color: 0x00ffff, // Cyan
-                emissive: 0x00ffff,
-                emissiveIntensity: 0.5,
-                transparent: true,
-                opacity: 0.7
-            });
-            
-            // Add 3 particles at each corner of the triangle
-            for (let i = 0; i < 3; i++) {
-                const angle = (i / 3) * Math.PI * 2;
-                const particle = new THREE.Mesh(particlesGeometry, particlesMaterial);
-                const radius = 0.3;
-                particle.position.set(
-                    Math.cos(angle) * radius,
-                    0.3,
-                    Math.sin(angle) * radius
-                );
-                trapGroup.add(particle);
-            }
-            
-            trapGroup.add(triangle);
-            
-            // Apply scale
-            trapGroup.scale.set(1.2, 1.0, 1.2);
-            
-            return trapGroup;
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -291,7 +242,7 @@
                     <option value="obstacle">Obstacle (Brown)</option>
                     <option value="water">Water (Blue)</option>
                     <option value="boss">Boss (Dark Blue)</option>
-                    <option value="trap">Trap/Spell (Dark Blue)</option>
+                    <option value="trap">Trap/Spell (Blue)</option>
                     <option value="npc">NPC (Orange)</option>
                 </select>
             </div>
@@ -307,7 +258,6 @@
                 <input type="file" id="loadFile" class="file-input" accept=".json">
                 <button id="clearButton" class="clear-btn">Clear Board</button>
                 <button id="resetViewButton">Reset View</button>
-                <button id="deleteModeButton" class="copy-btn">Delete Mode: OFF</button>
             </div>
         </div>
         
@@ -356,7 +306,7 @@
                     <span>Boss</span>
                 </div>
                 <div class="legend-item">
-                    <div style="background-color: #00008B;" class="legend-color"></div>
+                    <div style="background-color: #0000ff;" class="legend-color"></div>
                     <span>Trap/Spell</span>
                 </div>
                 <div class="legend-item">
@@ -432,6 +382,14 @@
             resetCameraPosition();
         });
         
+        document.getElementById('saveButton').addEventListener('click', function() {
+            saveBattleToJson();
+        });
+        
+        fileInput.addEventListener('change', function(e) {
+            loadBattleFromJson(e);
+        });
+        
         document.getElementById('deleteModeButton').addEventListener('click', function() {
             deleteMode = !deleteMode;
             this.textContent = deleteMode ? "Delete Mode: ON" : "Delete Mode: OFF";
@@ -456,14 +414,6 @@
                 document.getElementById('deleteModeButton').textContent = "Delete Mode: OFF";
                 document.getElementById('deleteModeButton').style.backgroundColor = "#8B0000";
             }
-        });
-        
-        document.getElementById('saveButton').addEventListener('click', function() {
-            saveBattleToJson();
-        });
-        
-        fileInput.addEventListener('change', function(e) {
-            loadBattleFromJson(e);
         });
         
         // Zoom buttons
@@ -530,8 +480,6 @@
                     // Update board size if it's different
                     if (battleData.boardSize !== boardSize) {
                         boardSize = battleData.boardSize;
-                        document.getElementById('boardSizeSelect').value = boardSize;
-                        resetScene();
                     }
                     
                     // Clear existing pieces
@@ -745,7 +693,7 @@
         // Create game piece based on type
         function createGamePiece(type) {
             // Different types of pieces
-            let pieceObject = new THREE.Group();
+            let pieceObject;
             
             switch (type) {
                 case 'party':
@@ -764,7 +712,7 @@
                     pieceObject = createHumanoidFigure(0x00008B, 3.0, true); // Dark blue, much larger
                     break;
                 case 'trap':
-                    pieceObject = createTrapSpell(); // Dark blue triangle for traps/spells
+                    pieceObject = createTrapSpell(); // Blue triangle for traps/spells
                     break;
                 case 'npc':
                     pieceObject = createHumanoidFigure(0xff9800, 1.8, true); // Orange
@@ -777,7 +725,7 @@
         }
         
         // Create a humanoid figure for characters
-        function createHumanoidFigure(color, scale = 1.8) {
+        function createHumanoidFigure(color, scale = 1.8, addWeapons = false) {
             // Group to hold all parts of the humanoid
             const humanoid = new THREE.Group();
             
@@ -806,8 +754,8 @@
             createLimb(humanoid, material, 0.06, 0.25, -0.07, 0.05, 0, 0); // Left leg
             createLimb(humanoid, material, 0.06, 0.25, 0.07, 0.05, 0, 0); // Right leg
             
-            // Special equipment for specific types
-            if (color === 0x9c27b0) { // Boss (Purple)
+            // Special equipment and weapons based on type
+            if (color === 0x00008B) { // Boss (Dark Blue)
                 // Add a crown for the boss
                 const crownGeometry = new THREE.ConeGeometry(0.1, 0.1, 4);
                 const crownMaterial = new THREE.MeshPhongMaterial({ 
@@ -817,33 +765,143 @@
                 const crown = new THREE.Mesh(crownGeometry, crownMaterial);
                 crown.position.y = 0.7;
                 humanoid.add(crown);
+                
+                // Two-handed sword for the boss
+                if (addWeapons) {
+                    const swordGeometry = new THREE.BoxGeometry(0.04, 0.4, 0.03);
+                    const swordMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0xa9a9a9, // Silver
+                        shininess: 80
+                    });
+                    const sword = new THREE.Mesh(swordGeometry, swordMaterial);
+                    
+                    // Add sword hilt
+                    const hiltGeometry = new THREE.BoxGeometry(0.12, 0.03, 0.03);
+                    const hilt = new THREE.Mesh(hiltGeometry, new THREE.MeshPhongMaterial({ 
+                        color: 0x8B4513, // Brown
+                        shininess: 30
+                    }));
+                    hilt.position.y = -0.2;
+                    sword.add(hilt);
+                    
+                    sword.position.set(0, 0.4, 0.2);
+                    sword.rotation.x = Math.PI / 6;
+                    humanoid.add(sword);
+                }
             } else if (color === 0xf44336) { // Enemy (Red)
                 // Add a sword for enemies
-                const swordGeometry = new THREE.BoxGeometry(0.03, 0.3, 0.03);
-                const swordMaterial = new THREE.MeshPhongMaterial({ 
-                    color: 0xa9a9a9, // Silver
-                    shininess: 80
-                });
-                const sword = new THREE.Mesh(swordGeometry, swordMaterial);
-                sword.position.set(0.2, 0.3, 0.1);
-                sword.rotation.z = Math.PI / 6;
-                humanoid.add(sword);
+                if (addWeapons) {
+                    const swordGeometry = new THREE.BoxGeometry(0.03, 0.3, 0.03);
+                    const swordMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0xa9a9a9, // Silver
+                        shininess: 80
+                    });
+                    const sword = new THREE.Mesh(swordGeometry, swordMaterial);
+                    
+                    // Add sword hilt
+                    const hiltGeometry = new THREE.BoxGeometry(0.08, 0.02, 0.03);
+                    const hilt = new THREE.Mesh(hiltGeometry, new THREE.MeshPhongMaterial({ 
+                        color: 0x8B4513, // Brown
+                        shininess: 30
+                    }));
+                    hilt.position.y = -0.15;
+                    sword.add(hilt);
+                    
+                    sword.position.set(0.2, 0.3, 0.1);
+                    sword.rotation.z = Math.PI / 6;
+                    humanoid.add(sword);
+                    
+                    // Maybe also add a small dagger in the other hand
+                    const daggerGeometry = new THREE.BoxGeometry(0.02, 0.15, 0.02);
+                    const dagger = new THREE.Mesh(daggerGeometry, swordMaterial);
+                    dagger.position.set(-0.15, 0.3, 0.1);
+                    dagger.rotation.z = -Math.PI / 6;
+                    humanoid.add(dagger);
+                }
             } else if (color === 0x4caf50) { // Party (Green)
-                // Add a shield for party members
-                const shieldGeometry = new THREE.BoxGeometry(0.15, 0.2, 0.03);
-                const shieldMaterial = new THREE.MeshPhongMaterial({ 
-                    color: 0x8b4513, // Brown
-                    shininess: 30
-                });
-                const shield = new THREE.Mesh(shieldGeometry, shieldMaterial);
-                shield.position.set(-0.2, 0.3, 0);
-                humanoid.add(shield);
+                // Add a shield and sword for party members
+                if (addWeapons) {
+                    const shieldGeometry = new THREE.BoxGeometry(0.15, 0.2, 0.03);
+                    const shieldMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0x8b4513, // Brown
+                        shininess: 30
+                    });
+                    const shield = new THREE.Mesh(shieldGeometry, shieldMaterial);
+                    
+                    // Add shield boss (center metal part)
+                    const shieldBossGeometry = new THREE.SphereGeometry(0.03, 8, 8);
+                    const shieldBoss = new THREE.Mesh(shieldBossGeometry, new THREE.MeshPhongMaterial({ 
+                        color: 0xa9a9a9, // Silver
+                        shininess: 80
+                    }));
+                    shieldBoss.position.z = 0.02;
+                    shield.add(shieldBoss);
+                    
+                    shield.position.set(-0.2, 0.3, 0);
+                    humanoid.add(shield);
+                    
+                    // Add a sword in the right hand
+                    const swordGeometry = new THREE.BoxGeometry(0.03, 0.25, 0.03);
+                    const swordMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0xa9a9a9, // Silver
+                        shininess: 80
+                    });
+                    const sword = new THREE.Mesh(swordGeometry, swordMaterial);
+                    
+                    // Add sword hilt
+                    const hiltGeometry = new THREE.BoxGeometry(0.08, 0.02, 0.03);
+                    const hilt = new THREE.Mesh(hiltGeometry, new THREE.MeshPhongMaterial({ 
+                        color: 0x8B4513, // Brown
+                        shininess: 30
+                    }));
+                    hilt.position.y = -0.12;
+                    sword.add(hilt);
+                    
+                    sword.position.set(0.15, 0.3, 0.1);
+                    sword.rotation.z = Math.PI / 6;
+                    humanoid.add(sword);
+                }
+            } else if (color === 0xff9800) { // NPC (Orange)
+                // Add a staff for NPCs
+                if (addWeapons) {
+                    const staffGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.5, 8);
+                    const staffMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0x8B4513, // Brown
+                        shininess: 30
+                    });
+                    const staff = new THREE.Mesh(staffGeometry, staffMaterial);
+                    
+                    // Add a gem at the top
+                    const gemGeometry = new THREE.SphereGeometry(0.04, 8, 8);
+                    const gemMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0x00ffff, // Cyan
+                        shininess: 100,
+                        emissive: 0x00ffff,
+                        emissiveIntensity: 0.3
+                    });
+                    const gem = new THREE.Mesh(gemGeometry, gemMaterial);
+                    gem.position.y = 0.25;
+                    staff.add(gem);
+                    
+                    staff.position.set(-0.1, 0.4, 0);
+                    staff.rotation.z = -Math.PI / 12;
+                    humanoid.add(staff);
+                }
             }
             
             // Apply overall scale
             humanoid.scale.set(scale, scale, scale);
             
             return humanoid;
+        }
+        
+        // Helper function to create limbs (arms/legs)
+        function createLimb(parent, material, radius, height, x, y, z, rotation) {
+            const limbGeometry = new THREE.CylinderGeometry(radius, radius, height, 8);
+            const limb = new THREE.Mesh(limbGeometry, material);
+            limb.position.set(x, y, z);
+            limb.rotation.z = rotation;
+            parent.add(limb);
         }
         
         // Create obstacle (brown rectangle)
@@ -915,13 +973,55 @@
             return waterGroup;
         }
         
-        // Helper function to create limbs (arms/legs)
-        function createLimb(parent, material, radius, height, x, y, z, rotation) {
-            const limbGeometry = new THREE.CylinderGeometry(radius, radius, height, 8);
-            const limb = new THREE.Mesh(limbGeometry, material);
-            limb.position.set(x, y, z);
-            limb.rotation.z = rotation;
-            parent.add(limb);
+        // Create trap/spell (triangle)
+        function createTrapSpell() {
+            // Create a triangle for traps/spells
+            const trapGroup = new THREE.Group();
+            
+            // Create a triangle (using cone geometry with 3 segments)
+            const triangleGeometry = new THREE.ConeGeometry(0.5, 0.6, 3);
+            const triangleMaterial = new THREE.MeshPhongMaterial({
+                color: 0x0000ff, // Blue
+                shininess: 50,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const triangle = new THREE.Mesh(triangleGeometry, triangleMaterial);
+            
+            // Rotate and position the triangle to lie flat
+            triangle.rotation.x = Math.PI;
+            triangle.position.y = 0.2;
+            
+            // Add some magical effect (small particles)
+            const particlesGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const particlesMaterial = new THREE.MeshPhongMaterial({
+                color: 0x00ffff, // Cyan
+                emissive: 0x00ffff,
+                emissiveIntensity: 0.5,
+                transparent: true,
+                opacity: 0.7
+            });
+            
+            // Add 3 particles at each corner of the triangle
+            for (let i = 0; i < 3; i++) {
+                const angle = (i / 3) * Math.PI * 2;
+                const particle = new THREE.Mesh(particlesGeometry, particlesMaterial);
+                const radius = 0.3;
+                particle.position.set(
+                    Math.cos(angle) * radius,
+                    0.3,
+                    Math.sin(angle) * radius
+                );
+                trapGroup.add(particle);
+            }
+            
+            trapGroup.add(triangle);
+            
+            // Apply scale
+            trapGroup.scale.set(1.2, 1.0, 1.2);
+            
+            return trapGroup;
         }
         
         // Reset camera to default position
@@ -1091,8 +1191,8 @@
                             
                             showErrorMessage("Piece deleted!");
                         }
-                    } else {
-                        // Start dragging when not in delete mode
+                    } else if (movementMode) {
+                        // Start dragging when in movement mode
                         isDragging = true;
                         selectedPiece = object;
                         
@@ -1192,6 +1292,8 @@
                     selectedPiece.position.y = 0.05; // Water stays very low
                 } else if (pieceType === 'obstacle') {
                     selectedPiece.position.y = 0.3; // Obstacles at medium height
+                } else if (pieceType === 'trap') {
+                    selectedPiece.position.y = 0.1; // Traps at low height
                 } else {
                     selectedPiece.position.y = 0; // Characters at ground level
                 }
@@ -1227,6 +1329,8 @@
                                 selectedPiece.position.y = 0.05;
                             } else if (pieceType === 'obstacle') {
                                 selectedPiece.position.y = 0.3;
+                            } else if (pieceType === 'trap') {
+                                selectedPiece.position.y = 0.1;
                             }
                         } else {
                             // Remove from old position
@@ -1240,6 +1344,9 @@
                             // Mark new position as occupied
                             const newPosKey = getPositionKey(x, z);
                             occupiedPositions[newPosKey] = selectedPiece.userData.id;
+                            
+                            // Update all pieces to recalculate facing
+                            updatePieces();
                         }
                     } else {
                         // Out of bounds, move back to original position
@@ -1251,6 +1358,8 @@
                             selectedPiece.position.y = 0.05;
                         } else if (pieceType === 'obstacle') {
                             selectedPiece.position.y = 0.3;
+                        } else if (pieceType === 'trap') {
+                            selectedPiece.position.y = 0.1;
                         }
                     }
                 }
@@ -1274,22 +1383,24 @@
             const sortedPieces = [...pieces].sort((a, b) => {
                 // Process static objects first, then NPCs, then enemies and party members
                 const typeOrder = { 'obstacle': 1, 'water': 2, 'trap': 3, 'npc': 4, 'boss': 5, 'enemy': 6, 'party': 7 };
-                return typeOrder[a.type] - typeOrder[b.type];
+                return (typeOrder[a.type] || 0) - (typeOrder[b.type] || 0);
             });
             
             // Process static objects and collect party/enemy positions for facing calculations
             const partyPositions = [];
             const enemyPositions = [];
             
-            // Create new pieces from data
+            // First pass: collect positions
             sortedPieces.forEach(pieceData => {
-                // Collect positions for party and enemies
                 if (pieceData.type === 'party') {
                     partyPositions.push({ x: pieceData.x, z: pieceData.z });
                 } else if (pieceData.type === 'enemy' || pieceData.type === 'boss') {
                     enemyPositions.push({ x: pieceData.x, z: pieceData.z });
                 }
-                
+            });
+            
+            // Second pass: create and place pieces
+            sortedPieces.forEach(pieceData => {
                 const piece = createGamePiece(pieceData.type);
                 
                 // Position based on type
@@ -1343,7 +1454,7 @@
         
         // Helper function to find the closest position
         function findClosestPosition(x, z, positions) {
-            if (positions.length === 0) return null;
+            if (!positions || positions.length === 0) return null;
             
             let closestPos = positions[0];
             let closestDist = calculateDistance(x, z, positions[0].x, positions[0].z);
