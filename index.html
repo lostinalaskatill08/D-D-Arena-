@@ -246,13 +246,8 @@
                 </select>
             </div>
             <div class="control-group">
-                <label class="control-label">Board Size:</label>
-                <select id="boardSizeSelect">
-                    <option value="12">12x12</option>
-                    <option value="16">16x16</option>
-                    <option value="20">20x20</option>
-                    <option value="24" selected>24x24</option>
-                </select>
+                <button id="movementModeButton" class="copy-btn">Movement Mode: OFF</button>
+                <button id="deleteModeButton" class="copy-btn">Delete Mode: OFF</button>
             </div>
             <div class="control-group">
                 <button id="saveButton" class="copy-btn">Save Battle</button>
@@ -288,7 +283,7 @@
         
         <div class="legend">
             <p class="legend-title">Instructions:</p>
-            <p>Click on the board to place a character. Drag characters to reposition them. Use rotation controls to view the board from different angles. Toggle Delete Mode to remove pieces by clicking on them.</p>
+            <p>Click on the board to place a character. Use Movement Mode to move pieces and pan the board by dragging. Use Delete Mode to remove pieces by clicking on them. Both modes cannot be active simultaneously.</p>
             <div class="legend-items">
                 <div class="legend-item">
                     <div class="legend-color party-color"></div>
@@ -327,7 +322,7 @@
         let pieces = [];
         let draggableMeshes = [];
         let selectedPieceType = 'party';
-        let boardSize = 24;
+        let boardSize = 24; // Fixed to 24x24
         let isDragging = false;
         let selectedPiece = null;
         let dragOffset = new THREE.Vector3();
@@ -336,6 +331,9 @@
         let shootingStars = [];
         let errorMessageTimeout;
         let deleteMode = false;
+        let movementMode = false;
+        let isDraggingBoard = false;
+        let lastMousePosition = {x: 0, y: 0};
         
         const boardContainer = document.getElementById('boardContainer');
         const positionsOutput = document.getElementById('positionsOutput');
@@ -355,11 +353,19 @@
         // Setup event listeners
         document.getElementById('pieceTypeSelect').addEventListener('change', function(e) {
             selectedPieceType = e.target.value;
-        });
-        
-        document.getElementById('boardSizeSelect').addEventListener('change', function(e) {
-            boardSize = parseInt(e.target.value, 10);
-            resetScene();
+            
+            // Turn off both modes when selecting a piece type
+            if (deleteMode) {
+                deleteMode = false;
+                document.getElementById('deleteModeButton').textContent = "Delete Mode: OFF";
+                document.getElementById('deleteModeButton').style.backgroundColor = "#8B0000";
+            }
+            
+            if (movementMode) {
+                movementMode = false;
+                document.getElementById('movementModeButton').textContent = "Movement Mode: OFF";
+                document.getElementById('movementModeButton').style.backgroundColor = "#8B0000";
+            }
         });
         
         document.getElementById('clearButton').addEventListener('click', function() {
@@ -376,6 +382,26 @@
             deleteMode = !deleteMode;
             this.textContent = deleteMode ? "Delete Mode: ON" : "Delete Mode: OFF";
             this.style.backgroundColor = deleteMode ? "#f44336" : "#8B0000";
+            
+            // Turn off movement mode if delete mode is activated
+            if (deleteMode && movementMode) {
+                movementMode = false;
+                document.getElementById('movementModeButton').textContent = "Movement Mode: OFF";
+                document.getElementById('movementModeButton').style.backgroundColor = "#8B0000";
+            }
+        });
+        
+        document.getElementById('movementModeButton').addEventListener('click', function() {
+            movementMode = !movementMode;
+            this.textContent = movementMode ? "Movement Mode: ON" : "Movement Mode: OFF";
+            this.style.backgroundColor = movementMode ? "#4caf50" : "#8B0000";
+            
+            // Turn off delete mode if movement mode is activated
+            if (movementMode && deleteMode) {
+                deleteMode = false;
+                document.getElementById('deleteModeButton').textContent = "Delete Mode: OFF";
+                document.getElementById('deleteModeButton').style.backgroundColor = "#8B0000";
+            }
         });
         
         document.getElementById('saveButton').addEventListener('click', function() {
@@ -957,6 +983,28 @@
             mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
             mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
             
+            // Store mouse position for board dragging
+            lastMousePosition = {
+                x: event.clientX,
+                y: event.clientY
+            };
+            
+            // In movement mode, check if we're clicking on the board (but not on a piece)
+            if (movementMode) {
+                // Cast ray to check for pieces first
+                raycaster.setFromCamera(mouse, camera);
+                const pieceIntersects = raycaster.intersectObjects(draggableMeshes, true);
+                
+                if (pieceIntersects.length === 0) {
+                    // Not clicking on a piece, so we can drag the board
+                    const boardIntersects = raycaster.intersectObject(board);
+                    if (boardIntersects.length > 0) {
+                        isDraggingBoard = true;
+                        return;
+                    }
+                }
+            }
+            
             // Cast ray
             raycaster.setFromCamera(mouse, camera);
             
@@ -1003,9 +1051,9 @@
             }
             
             // If not dragging a piece, check for board click to place new piece
-            // Skip adding new pieces if in delete mode
+            // Skip adding new pieces if in delete mode or movement mode
             const boardIntersects = raycaster.intersectObject(board);
-            if (boardIntersects.length > 0 && !isDragging && !deleteMode) {
+            if (boardIntersects.length > 0 && !isDragging && !deleteMode && !movementMode) {
                 const point = boardIntersects[0].point;
                 // Convert to grid coordinates
                 const x = Math.floor(point.x);
@@ -1039,6 +1087,26 @@
         
         // Handle mouse move
         function onMouseMove(event) {
+            if (isDraggingBoard && movementMode) {
+                // Calculate mouse movement
+                const deltaX = event.clientX - lastMousePosition.x;
+                const deltaY = event.clientY - lastMousePosition.y;
+                
+                // Update last mouse position
+                lastMousePosition.x = event.clientX;
+                lastMousePosition.y = event.clientY;
+                
+                // Move the camera horizontally in the opposite direction of mouse movement
+                camera.position.x -= deltaX * 0.05;
+                camera.position.z += deltaY * 0.05;
+                
+                // Keep the camera looking at the board center
+                const boardCenter = new THREE.Vector3(boardSize / 2 - 0.5, 0, boardSize / 2 - 0.5);
+                camera.lookAt(boardCenter);
+                
+                return;
+            }
+            
             if (!isDragging || !selectedPiece) return;
             
             // Calculate mouse position
@@ -1075,6 +1143,12 @@
         
         // Handle mouse up
         function onMouseUp() {
+            // Reset board dragging state
+            if (isDraggingBoard) {
+                isDraggingBoard = false;
+                return;
+            }
+            
             if (isDragging && selectedPiece) {
                 // Update piece data
                 const pieceIndex = pieces.findIndex(p => p.id === selectedPiece.userData.id);
@@ -1179,13 +1253,15 @@
             }
             
             // Reset game state
-            pieces = [];
+            // Keep the pieces when resetting
             draggableMeshes = [];
-            occupiedPositions = {};
             shootingStars = [];
             
             // Recreate everything
             init();
+            
+            // Restore pieces
+            updatePieces();
         }
         
         // Animation loop
